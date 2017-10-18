@@ -16,6 +16,16 @@ This forces you to manually scan the text and try to figure out exactly whats wr
 
 ![](Resources/after.png)
 
+## Installation
+
+### CocoaPods
+
+Add `pod 'Difference'` to your Podfile.
+
+### Carthage
+
+Add `github "krzysztofzablocki/Difference"` to your Cartfile.
+
 ## Using lldb
 
 Just write following to see difference between 2 instances:
