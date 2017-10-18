@@ -53,8 +53,6 @@
 		8933C7891EB5B82A000D00A4 /* DifferenceTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DifferenceTests.swift; sourceTree = "<group>"; };
 		AD2FAA261CD0B6D800659CF4 /* Difference.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Difference.plist; sourceTree = "<group>"; };
 		AD2FAA281CD0B6E100659CF4 /* DifferenceTests.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = DifferenceTests.plist; sourceTree = "<group>"; };
-		CDF9A0C21F979B83004A5C4A /* XCTAssertions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCTAssertions.swift; sourceTree = "<group>"; };
-		CDF9A0C71F979EA5004A5C4A /* QuickAssertions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAssertions.swift; sourceTree = "<group>"; };
 		DD75027A1C68FCFC006590AF /* Difference-macOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Difference-macOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD75028D1C690C7A006590AF /* Difference-tvOS Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Difference-tvOS Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -152,8 +150,6 @@
 			isa = PBXGroup;
 			children = (
 				8933C7841EB5B820000D00A4 /* Difference.swift */,
-				CDF9A0C21F979B83004A5C4A /* XCTAssertions.swift */,
-				CDF9A0C71F979EA5004A5C4A /* QuickAssertions.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
