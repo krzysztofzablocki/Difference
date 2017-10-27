@@ -29,6 +29,14 @@ fileprivate struct Person {
 
 
 class DifferenceTests: XCTestCase {
+
+    func testCanFindRootPrimitiveDifference() {
+        let results = diff(2, 3)
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first, "received: \"3\" expected: \"2\"\n")
+    }
+
     fileprivate let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)))
 
     func testCanFindPrimitiveDifference() {
@@ -58,10 +66,11 @@ class DifferenceTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first, "child address:\nstreet received: \"2nd Street\" expected: \"Times Square\"\nchild counter:\n\tcounter received: \"1\" expected: \"2\"\n")
     }
-    
+
     static var allTests = [
+        ("testCanFindRootPrimitiveDifference", testCanFindRootPrimitiveDifference),
         ("testCanFindPrimitiveDifference", testCanFindPrimitiveDifference),
         ("testCanFindMultipleDifference", testCanFindMultipleDifference),
-        ("testCanFindComplexDifference", testCanFindComplexDifference)
+        ("testCanFindComplexDifference", testCanFindComplexDifference),
     ]
 }

@@ -25,6 +25,13 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
     let lhsMirror = Mirror(reflecting: expected)
     let rhsMirror = Mirror(reflecting: received)
 
+    guard lhsMirror.children.count != 0 else {
+        if String(dumping: received) != String(dumping: expected) {
+            closure("received: \"\(received)\" expected: \"\(expected)\"\n")
+        }
+        return
+    }
+
     let zipped = zip(lhsMirror.children, rhsMirror.children)
     zipped.forEach { (lhs, rhs) in
         let leftDump = String(dumping: lhs.value)
