@@ -5,10 +5,10 @@
 
 # Difference
 
-Better way to identify whats different between 2 instances.
+Better way to identify what's different between 2 instances.
 
 Have you ever written tests? 
-Usually they use equality asserts, e.g. `XCTAssertEqual`, what happens if the object aren't equal ? Xcode throws wall of text at you:
+Usually they use equality asserts, e.g. `XCTAssertEqual`, what happens if the objects aren't equal? Xcode throws a wall of text at you:
 
 ![](Resources/before.png)
 
@@ -28,7 +28,7 @@ Add `github "krzysztofzablocki/Difference"` to your Cartfile.
 
 ## Using lldb
 
-Just write following to see difference between 2 instances:
+Just write the following to see the difference between 2 instances:
 
 `po dumpDiff(expected, received)`
 
