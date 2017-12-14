@@ -32,6 +32,18 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
         return
     }
 
+    switch (lhsMirror.displayStyle, rhsMirror.displayStyle) {
+    case (.collection?, .collection?) where lhsMirror.children.count != rhsMirror.children.count:
+        closure("""
+            different count:
+            \(indentation(level: level))received: \"\(received)\" (\(rhsMirror.children.count))
+            \(indentation(level: level))expected: \"\(expected)\" (\(lhsMirror.children.count))\n
+            """)
+        return
+    default:
+        break
+    }
+
     let zipped = zip(lhsMirror.children, rhsMirror.children)
     zipped.forEach { (lhs, rhs) in
         let leftDump = String(dumping: lhs.value)
@@ -42,7 +54,7 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                     results.append(diff)
                 }
                 if !results.isEmpty {
-                    closure("child \(lhs.label ?? ""):\n\((0..<level).reduce("") { acc, _ in acc + "\t" })" + results.joined())
+                    closure("child \(lhs.label ?? ""):\n\(indentation(level: level))" + results.joined())
                 }
             } else {
                 closure("\(lhs.label ?? "") received: \"\(rhs.value)\" expected: \"\(lhs.value)\"\n")
@@ -51,6 +63,9 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
     }
 }
 
+private func indentation(level: Int) -> String {
+    return (0..<level).reduce("") { acc, _ in acc + "\t" }
+}
 
 /// Builds list of differences between 2 objects
 ///
