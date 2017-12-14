@@ -40,6 +40,8 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
             \(indentation(level: level))expected: \"\(expected)\" (\(lhsMirror.children.count))\n
             """)
         return
+    case (.enum?, .enum?) where lhsMirror.children.first?.label != rhsMirror.children.first?.label:
+        closure("received: \"\(received)\" expected: \"\(expected)\"\n")
     default:
         break
     }
