@@ -27,6 +27,10 @@ fileprivate struct Person {
     let address: Address
 }
 
+private enum State {
+    case loaded([Int])
+    case anotherLoaded([Int])
+}
 
 class DifferenceTests: XCTestCase {
 
@@ -74,11 +78,19 @@ class DifferenceTests: XCTestCase {
         XCTAssertEqual(results.first, "different count:\nreceived: \"[1, 3]\" (2)\nexpected: \"[1]\" (1)\n")
     }
 
+    func test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical() {
+        let results = diff(State.loaded([0]), State.anotherLoaded([0]))
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first, "received: \"anotherLoaded([0])\" expected: \"loaded([0])\"\n")
+    }
+
     static var allTests = [
         ("testCanFindRootPrimitiveDifference", testCanFindRootPrimitiveDifference),
         ("testCanFindPrimitiveDifference", testCanFindPrimitiveDifference),
         ("testCanFindMultipleDifference", testCanFindMultipleDifference),
         ("testCanFindComplexDifference", testCanFindComplexDifference),
         ("test_canFindCollectionCountDifference", test_canFindCollectionCountDifference),
+        ("test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical", test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical)
     ]
 }
