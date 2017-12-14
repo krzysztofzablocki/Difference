@@ -67,10 +67,18 @@ class DifferenceTests: XCTestCase {
         XCTAssertEqual(results.first, "child address:\nstreet received: \"2nd Street\" expected: \"Times Square\"\nchild counter:\n\tcounter received: \"1\" expected: \"2\"\n")
     }
 
+    func test_canFindCollectionCountDifference() {
+        let results = diff([1], [1, 3])
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first, "different count:\nreceived: \"[1, 3]\" (2)\nexpected: \"[1]\" (1)\n")
+    }
+
     static var allTests = [
         ("testCanFindRootPrimitiveDifference", testCanFindRootPrimitiveDifference),
         ("testCanFindPrimitiveDifference", testCanFindPrimitiveDifference),
         ("testCanFindMultipleDifference", testCanFindMultipleDifference),
         ("testCanFindComplexDifference", testCanFindComplexDifference),
+        ("test_canFindCollectionCountDifference", test_canFindCollectionCountDifference),
     ]
 }
