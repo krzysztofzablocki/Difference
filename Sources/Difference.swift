@@ -33,13 +33,15 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
     }
 
     switch (lhsMirror.displayStyle, rhsMirror.displayStyle) {
-    case (.collection?, .collection?) where lhsMirror.children.count != rhsMirror.children.count:
-        closure("""
-            different count:
-            \(indentation(level: level))received: \"\(received)\" (\(rhsMirror.children.count))
-            \(indentation(level: level))expected: \"\(expected)\" (\(lhsMirror.children.count))\n
-            """)
-        return
+    case (.collection?, .collection?), (.dictionary?, .dictionary?):
+        if lhsMirror.children.count != rhsMirror.children.count {
+            closure("""
+                different count:
+                \(indentation(level: level))received: \"\(received)\" (\(rhsMirror.children.count))
+                \(indentation(level: level))expected: \"\(expected)\" (\(lhsMirror.children.count))\n
+                """)
+            return
+        }
     case (.enum?, .enum?) where lhsMirror.children.first?.label != rhsMirror.children.first?.label:
         closure("received: \"\(received)\" expected: \"\(expected)\"\n")
     default:
