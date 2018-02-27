@@ -46,15 +46,22 @@ public func AssertEqual<T: Equatable>(_ expected: T, _ received: T, file: Static
 Just add this to your test target:
 
 ```swift
-public func equalDiff<T: Equatable>(_ otherObject: T?) -> Predicate<T> {
+public func equalDiff<T: Equatable>(_ expectedValue: T?) -> Predicate<T> {
     return Predicate.define { actualExpression in
-        guard let otherObject = otherObject else {
+        let receivedValue = try actualExpression.evaluate()
+
+        if receivedValue == nil {
+            var message = ExpectationMessage.fail("")
+            if let expectedValue = expectedValue {
+                message = ExpectationMessage.expectedCustomValueTo("equal <\(expectedValue)>", "nil")
+            }
+            return PredicateResult(status: .fail, message: message)
+        }
+        if expectedValue == nil {
             return PredicateResult(status: .fail, message: ExpectationMessage.fail("").appendedBeNilHint())
         }
 
-        let object = try actualExpression.evaluate()
-
-        return PredicateResult(bool: object != otherObject, message: ExpectationMessage.fail("Found difference for " + diff(object, otherObject).joined(separator: ", ")))
+        return PredicateResult(bool: receivedValue == expectedValue, message: ExpectationMessage.fail("Found difference for " + diff(expectedValue, receivedValue).joined(separator: ", ")))
     }
 }
 ```
