@@ -23,8 +23,13 @@ fileprivate struct Person {
         }
         let counter: ComplexCounter
     }
+    
+    struct Pet {
+        let name: String
+    }
 
     let address: Address
+    let pet: Pet?
 }
 
 
@@ -37,10 +42,10 @@ class DifferenceTests: XCTestCase {
         XCTAssertEqual(results.first, "received: \"3\" expected: \"2\"\n")
     }
 
-    fileprivate let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)))
+    fileprivate let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil)
 
     func testCanFindPrimitiveDifference() {
-        let stub = Person(name: "Krzysztof", age: 30, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)))
+        let stub = Person(name: "Krzysztof", age: 30, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil)
 
         let results = diff(truth, stub)
 
@@ -49,7 +54,7 @@ class DifferenceTests: XCTestCase {
     }
 
     func testCanFindMultipleDifference() {
-        let stub = Person(name: "Adam", age: 30, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)))
+        let stub = Person(name: "Adam", age: 30, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil)
 
         let results = diff(truth, stub)
 
@@ -59,12 +64,30 @@ class DifferenceTests: XCTestCase {
     }
 
     func testCanFindComplexDifference() {
-        let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "2nd Street", postCode: "00-1000", counter: .init(counter: 1)))
+        let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "2nd Street", postCode: "00-1000", counter: .init(counter: 1)), pet: nil)
 
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first, "child address:\nstreet received: \"2nd Street\" expected: \"Times Square\"\nchild counter:\n\tcounter received: \"1\" expected: \"2\"\n")
+    }
+    
+    func testCanGiveDescriptionForOptionalOnLeftSide() {
+        let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil)
+        
+        let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: .init(name: "Fluffy"))
+        
+        let results = diff(truth, stub)
+        XCTAssertEqual(results.count, 1)
+    }
+    
+    func testCanGiveDescriptionForOptionalOnRightSide() {
+        let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: .init(name: "Fluffy"))
+        
+        let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil)
+        
+        let results = diff(truth, stub)
+        XCTAssertEqual(results.count, 1)
     }
 
     static var allTests = [
