@@ -32,6 +32,10 @@ fileprivate struct Person {
     let pet: Pet?
 }
 
+private enum State {
+    case loaded([Int])
+    case anotherLoaded([Int])
+}
 
 class DifferenceTests: XCTestCase {
 
@@ -90,10 +94,42 @@ class DifferenceTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
     }
 
+    func test_canFindCollectionCountDifference() {
+        let results = diff([1], [1, 3])
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first, "different count:\nreceived: \"[1, 3]\" (2)\nexpected: \"[1]\" (1)\n")
+    }
+
+    func test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical() {
+        let results = diff(State.loaded([0]), State.anotherLoaded([0]))
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first, "received: \"anotherLoaded([0])\" expected: \"loaded([0])\"\n")
+    }
+
+    func test_canFindDictionaryCountDifference() {
+        let results = diff(["A": "B"], [:])
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first, "different count:\nreceived: \"[:]\" (0)\nexpected: \"[\"A\": \"B\"]\" (1)\n")
+    }
+
+    func test_canFindOptionalDifferenceBetweenSomeAndNone() {
+        let results = diff(["A": "B"], nil)
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first, "received: \"nil\" expected: \"Optional([\"A\": \"B\"])\"\n")
+    }
+
     static var allTests = [
         ("testCanFindRootPrimitiveDifference", testCanFindRootPrimitiveDifference),
         ("testCanFindPrimitiveDifference", testCanFindPrimitiveDifference),
         ("testCanFindMultipleDifference", testCanFindMultipleDifference),
         ("testCanFindComplexDifference", testCanFindComplexDifference),
+        ("test_canFindCollectionCountDifference", test_canFindCollectionCountDifference),
+        ("test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical", test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical),
+        ("test_canFindDictionaryCountDifference", test_canFindDictionaryCountDifference),
+        ("test_canFindOptionalDifferenceBetweenSomeAndNone", test_canFindOptionalDifferenceBetweenSomeAndNone)
     ]
 }
