@@ -26,6 +26,10 @@ Add `pod 'Difference'` to your Podfile.
 
 Add `github "krzysztofzablocki/Difference"` to your Cartfile.
 
+### SwiftPM
+
+Add `.package(url: "https://github.com/krzysztofzablocki/Difference.git", .branch("master")),` dependency in your Package manifest.
+
 ## Using lldb
 
 Just write the following to see the difference between 2 instances:
