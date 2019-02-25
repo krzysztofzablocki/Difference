@@ -112,7 +112,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(["A": "B"], [:])
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "different count:\nreceived: \"[:]\" (0)\nexpected: \"[\"A\": \"B\"]\" (1)\n")
+        XCTAssertEqual(results.first, "received: \"[:]\" expected: \"[\"A\": \"B\"]\"\n")
     }
 
     func test_canFindOptionalDifferenceBetweenSomeAndNone() {
