@@ -10,21 +10,21 @@ import Foundation
 import XCTest
 import Difference
 
-fileprivate struct Person {
+fileprivate struct Person: Equatable {
     let name: String
     let age: Int
 
-    struct Address {
+    struct Address: Equatable {
         let street: String
         let postCode: String
 
-        struct ComplexCounter {
+        struct ComplexCounter: Equatable {
             let counter: Int
         }
         let counter: ComplexCounter
     }
     
-    struct Pet {
+    struct Pet: Equatable {
         let name: String
     }
 
@@ -55,6 +55,7 @@ class DifferenceTests: XCTestCase {
 
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first, "age received: \"30\" expected: \"29\"\n")
+
     }
 
     func testCanFindMultipleDifference() {
@@ -75,21 +76,21 @@ class DifferenceTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first, "child address:\nstreet received: \"2nd Street\" expected: \"Times Square\"\nchild counter:\n\tcounter received: \"1\" expected: \"2\"\n")
     }
-    
+
     func testCanGiveDescriptionForOptionalOnLeftSide() {
         let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil)
-        
+
         let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: .init(name: "Fluffy"))
-        
+
         let results = diff(truth, stub)
         XCTAssertEqual(results.count, 1)
     }
-    
+
     func testCanGiveDescriptionForOptionalOnRightSide() {
         let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: .init(name: "Fluffy"))
-        
+
         let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil)
-        
+
         let results = diff(truth, stub)
         XCTAssertEqual(results.count, 1)
     }
@@ -126,7 +127,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(
             [
                 "a": 1,
-                "b": 2,
+                "b": 3,
                 "c": 3,
                 "d": 4,
             ],
@@ -138,19 +139,33 @@ class DifferenceTests: XCTestCase {
             ]
         )
 
+        // TODO: Should results.count be 2?
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first, "child key d:\n\tsome received: \"0\" expected: \"4\"\n")
     }
 
-    static var allTests = [
-        ("testCanFindRootPrimitiveDifference", testCanFindRootPrimitiveDifference),
-        ("testCanFindPrimitiveDifference", testCanFindPrimitiveDifference),
-        ("testCanFindMultipleDifference", testCanFindMultipleDifference),
-        ("testCanFindComplexDifference", testCanFindComplexDifference),
-        ("test_canFindCollectionCountDifference", test_canFindCollectionCountDifference),
-        ("test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical", test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical),
-        ("test_canFindDictionaryCountDifference", test_canFindDictionaryCountDifference),
-        ("test_canFindOptionalDifferenceBetweenSomeAndNone", test_canFindOptionalDifferenceBetweenSomeAndNone),
-        ("test_canFindDictionaryDifference", test_canFindDictionaryDifference)
-    ]
+    func test_set() {
+        (0..<1000).forEach { _ in
+        let expected: Set<Int> = [1, 2, 3, 4, 5]
+        let actual: Set<Int> = [7, 6, 5, 4, 3]
+
+        let results = diff(expected, actual)
+
+        XCTAssertEqual(results.count, 1)
+            // Need to figure out how to get consistent ordering of a set in the result. Alternately, reduce this test to only 1 diff.
+        XCTAssertEqual(results.first!, "Set mismatch:\n\tvalue received: \"7\" expected: \"2\"\n\tvalue received: \"6\" expected: \"1\"\n" )
+        }
+    }
+//
+//    static var allTests = [
+//        ("testCanFindRootPrimitiveDifference", testCanFindRootPrimitiveDifference),
+//        ("testCanFindPrimitiveDifference", testCanFindPrimitiveDifference),
+//        ("testCanFindMultipleDifference", testCanFindMultipleDifference),
+//        ("testCanFindComplexDifference", testCanFindComplexDifference),
+//        ("test_canFindCollectionCountDifference", test_canFindCollectionCountDifference),
+//        ("test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical", test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical),
+//        ("test_canFindDictionaryCountDifference", test_canFindDictionaryCountDifference),
+//        ("test_canFindOptionalDifferenceBetweenSomeAndNone", test_canFindOptionalDifferenceBetweenSomeAndNone),
+//        ("test_canFindDictionaryDifference", test_canFindDictionaryDifference)
+//    ]
 }

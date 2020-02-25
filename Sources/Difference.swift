@@ -35,7 +35,8 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
     let hasDiffNumOfChildren = lhsMirror.children.count != rhsMirror.children.count
     switch (lhsMirror.displayStyle, rhsMirror.displayStyle) {
     case (.collection?, .collection?) where hasDiffNumOfChildren,
-         (.dictionary?, .dictionary?) where hasDiffNumOfChildren:
+         (.dictionary?, .dictionary?) where hasDiffNumOfChildren,
+         (.set?, .set?) where hasDiffNumOfChildren:
             closure("""
                 different count:
                 \(indentation(level: level))received: \"\(received)\" (\(rhsMirror.children.count))
@@ -53,6 +54,32 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                 if !results.isEmpty {
                     closure("child key \(key.description):\n\(indentation(level: max(level, 1)))" + results.joined())
                 }
+            }
+            return
+        }
+
+    case (.set?, .set?):
+        if let expectedSet = expected as? Set<AnyHashable>,
+            let receivedSet = received as? Set<AnyHashable> {
+            let uniqueExpected = expectedSet.subtracting(receivedSet)
+            let uniqueReceived = receivedSet.subtracting(expectedSet)
+
+//            let something = Array(uniqueExpected).sorted { (lhs, rhs) -> Bool in
+//                if let lhsComp = lhs as? Comparable {
+//
+//                }
+//            }
+
+
+
+            var results = [String]()
+            zip(uniqueExpected, uniqueReceived).forEach { lhs, rhs in
+                diff(lhs, rhs, level: level + 1) { diff in
+                    results.append("\(indentation(level: max(level, 1)))\(diff)")
+                }
+            }
+            if !results.isEmpty {
+                closure("Set mismatch:\n" + results.joined())
             }
             return
         }
