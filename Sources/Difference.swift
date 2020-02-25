@@ -32,29 +32,20 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
         return
     }
 
+    let hasDiffNumOfChildren = lhsMirror.children.count != rhsMirror.children.count
     switch (lhsMirror.displayStyle, rhsMirror.displayStyle) {
-    case (.collection?, .collection?), (.dictionary?, .dictionary?):
-        if lhsMirror.children.count != rhsMirror.children.count {
+    case (.collection?, .collection?) where hasDiffNumOfChildren,
+         (.dictionary?, .dictionary?) where hasDiffNumOfChildren:
             closure("""
                 different count:
                 \(indentation(level: level))received: \"\(received)\" (\(rhsMirror.children.count))
                 \(indentation(level: level))expected: \"\(expected)\" (\(lhsMirror.children.count))\n
                 """)
-            return
-        }
-    case (.enum?, .enum?) where lhsMirror.children.first?.label != rhsMirror.children.first?.label,
-         (.optional?, .optional?) where lhsMirror.children.count != rhsMirror.children.count:
-        closure("received: \"\(received)\" expected: \"\(expected)\"\n")
-    default:
-        break
-    }
-
-    switch (lhsMirror.displayStyle, rhsMirror.displayStyle) {
+        return
     case (.dictionary?, .dictionary?):
         if let expectedDict = expected as? Dictionary<AnyHashable, Any>,
             let receivedDict = received as? Dictionary<AnyHashable, Any> {
-
-            Array(expectedDict.keys).forEach { key in
+            expectedDict.keys.forEach { key in
                 var results = [String]()
                 diff(expectedDict[key], receivedDict[key], level: level + 1) { diff in
                     results.append(diff)
@@ -65,6 +56,9 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
             }
             return
         }
+    case (.enum?, .enum?) where lhsMirror.children.first?.label != rhsMirror.children.first?.label,
+         (.optional?, .optional?) where hasDiffNumOfChildren:
+        closure("received: \"\(received)\" expected: \"\(expected)\"\n")
     default:
         break
     }
