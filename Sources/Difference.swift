@@ -49,6 +49,26 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
         break
     }
 
+    switch (lhsMirror.displayStyle, rhsMirror.displayStyle) {
+    case (.dictionary?, .dictionary?):
+        if let expectedDict = expected as? Dictionary<AnyHashable, Any>,
+            let receivedDict = received as? Dictionary<AnyHashable, Any> {
+
+            Array(expectedDict.keys).forEach { key in
+                var results = [String]()
+                diff(expectedDict[key], receivedDict[key], level: level + 1) { diff in
+                    results.append(diff)
+                }
+                if !results.isEmpty {
+                    closure("child key \(key.description):\n\(indentation(level: max(level, 1)))" + results.joined())
+                }
+            }
+            return
+        }
+    default:
+        break
+    }
+
     let zipped = zip(lhsMirror.children, rhsMirror.children)
     zipped.forEach { (lhs, rhs) in
         let leftDump = String(dumping: lhs.value)

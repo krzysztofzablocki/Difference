@@ -122,6 +122,26 @@ class DifferenceTests: XCTestCase {
         XCTAssertEqual(results.first, "received: \"nil\" expected: \"Optional([\"A\": \"B\"])\"\n")
     }
 
+    func test_canFindDictionaryDifference() {
+        let results = diff(
+            [
+                "a": 1,
+                "b": 2,
+                "c": 3,
+                "d": 4,
+            ],
+            [
+                "a": 1,
+                "b": 2,
+                "c": 3,
+                "d": 0,
+            ]
+        )
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first, "child key d:\n\tsome received: \"0\" expected: \"4\"\n")
+    }
+
     static var allTests = [
         ("testCanFindRootPrimitiveDifference", testCanFindRootPrimitiveDifference),
         ("testCanFindPrimitiveDifference", testCanFindPrimitiveDifference),
@@ -130,6 +150,7 @@ class DifferenceTests: XCTestCase {
         ("test_canFindCollectionCountDifference", test_canFindCollectionCountDifference),
         ("test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical", test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical),
         ("test_canFindDictionaryCountDifference", test_canFindDictionaryCountDifference),
-        ("test_canFindOptionalDifferenceBetweenSomeAndNone", test_canFindOptionalDifferenceBetweenSomeAndNone)
+        ("test_canFindOptionalDifferenceBetweenSomeAndNone", test_canFindOptionalDifferenceBetweenSomeAndNone),
+        ("test_canFindDictionaryDifference", test_canFindDictionaryDifference)
     ]
 }
