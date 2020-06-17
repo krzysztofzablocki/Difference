@@ -72,9 +72,11 @@ class DifferenceTests: XCTestCase {
         let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "2nd Street", postCode: "00-1000", counter: .init(counter: 1)), pet: nil)
 
         let results = diff(truth, stub)
+        dumpDiff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first, "child address:\nstreet received: \"2nd Street\" expected: \"Times Square\"\nchild counter:\n\tcounter received: \"1\" expected: \"2\"\n")
+
     }
 
     func testCanGiveDescriptionForOptionalOnLeftSide() {
@@ -158,13 +160,14 @@ class DifferenceTests: XCTestCase {
     }
 
     func test_inner_set() {
-        let expectedAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [1, 2, 3, 4, 5], dictionaryOfInts: [:])
-        let actualAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [3, 4, 5, 6, 7], dictionaryOfInts: [:])
+        let expectedAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [1, 2, 3, 4, 5], dictionaryOfInts: ["a":1])
+        let actualAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [3, 4, 5, 6, 7], dictionaryOfInts: ["a":2])
 
         let newPersonExpected = NewPerson(name: "Krzysztof", age: 29, address: expectedAddress, secondAddress: expectedAddress, pet: nil)
         let newPersonActual = NewPerson(name: "Krzysztof", age: 29, address: actualAddress, secondAddress: actualAddress, pet: nil)
 
         let results = diff(newPersonExpected, newPersonActual)
+        dumpDiff(newPersonExpected, newPersonActual)
 
         XCTAssertEqual(results.first!, "" )
         print("@@@@@@@@@@@@")
@@ -194,6 +197,7 @@ class DifferenceTests: XCTestCase {
 
         let results = diff(newPersonExpected, newPersonActual)
 
+        dumpDiff(newPersonExpected, newPersonActual)
         XCTAssertEqual(results.first!, "" )
         print(results.joined(separator: "\n"))
 

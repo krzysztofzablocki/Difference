@@ -52,7 +52,7 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                     results.append(diff)
                 }
                 if !results.isEmpty {
-                    closure("child key \(key.description):\n\(indentation(level: max(level, 1)))" + results.joined(separator: "\n\(indentation(level: max(level, 1)))"))
+                    closure("child key \(key.description):\n\(indentation(level: max(level + 1, 1)))" + results.joined(separator: "\n\(indentation(level: max(level + 1, 1)))"))
                 }
             }
             return
@@ -62,20 +62,14 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
         if let expectedSet = expected as? Set<AnyHashable>,
             let receivedSet = received as? Set<AnyHashable> {
             let uniqueExpected = expectedSet.subtracting(receivedSet)
-            let uniqueReceived = receivedSet.subtracting(expectedSet)
 
             var results = [String]()
             uniqueExpected.forEach { unique in
                 results.append("SetElement missing: \(unique.description)\n")
             }
-//            zip(uniqueExpected, uniqueReceived).forEach { lhs, rhs in
-//                diff(lhs, rhs, level: level + 1) { diff in
-//                    results.append("\(indentation(level: max(level, 1)))\(diff)")
-//                }
-//            }
+
             if !uniqueExpected.isEmpty {
-//                closure("ExpectedSet missing:\n" + Array(uniqueExpected).map { $0.description }.joined())
-                closure("ExpectedSet missing:\n\(indentation(level: max(level, 1)))" + results.joined(separator: "\(indentation(level: max(level, 1)))"))
+                closure(results.joined(separator: "\(indentation(level: max(level, 1)))"))
             }
             return
         }
@@ -96,7 +90,7 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                     results.append(diff)
                 }
                 if !results.isEmpty {
-                    closure("child \(lhs.label ?? ""):\n\(indentation(level: level))" + results.joined(separator: "\(indentation(level: level))"))
+                    closure("child \(lhs.label ?? ""):\n\(indentation(level: level + 1))" + results.joined(separator: "\(indentation(level: level + 1))"))
                 }
             } else {
                 closure("\(lhs.label ?? "") received: \"\(rhs.value)\" expected: \"\(lhs.value)\"\n")
