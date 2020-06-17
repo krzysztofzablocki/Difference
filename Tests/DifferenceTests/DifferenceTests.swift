@@ -140,21 +140,93 @@ class DifferenceTests: XCTestCase {
         )
 
         // TODO: Should results.count be 2?
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "child key d:\n\tsome received: \"0\" expected: \"4\"\n")
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(results.first, "")
     }
 
     func test_set() {
         (0..<1000).forEach { _ in
-        let expected: Set<Int> = [1, 2, 3, 4, 5]
-        let actual: Set<Int> = [7, 6, 5, 4, 3]
+            let expected: Set<Int> = [1, 2, 3, 4, 5]
+            let actual: Set<Int> = [7, 6, 5, 4, 3]
 
-        let results = diff(expected, actual)
+            let results = diff(expected, actual)
 
-        XCTAssertEqual(results.count, 1)
-            // Need to figure out how to get consistent ordering of a set in the result. Alternately, reduce this test to only 1 diff.
-        XCTAssertEqual(results.first!, "Set mismatch:\n\tvalue received: \"7\" expected: \"2\"\n\tvalue received: \"6\" expected: \"1\"\n" )
+            XCTAssertEqual(results.count, 1)
+                // Need to figure out how to get consistent ordering of a set in the result. Alternately, reduce this test to only 1 diff.
+            XCTAssertEqual(results.first!, "Set mismatch:\n\tvalue received: \"7\" expected: \"2\"\n\tvalue received: \"6\" expected: \"1\"\n" )
         }
+    }
+
+    func test_inner_set() {
+        let expectedAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [1, 2, 3, 4, 5], dictionaryOfInts: [:])
+        let actualAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [3, 4, 5, 6, 7], dictionaryOfInts: [:])
+
+        let newPersonExpected = NewPerson(name: "Krzysztof", age: 29, address: expectedAddress, secondAddress: expectedAddress, pet: nil)
+        let newPersonActual = NewPerson(name: "Krzysztof", age: 29, address: actualAddress, secondAddress: actualAddress, pet: nil)
+
+        let results = diff(newPersonExpected, newPersonActual)
+
+        XCTAssertEqual(results.first!, "" )
+        print("@@@@@@@@@@@@")
+        print(results.first!)
+        print("@@@@@@@@@@@@")
+     }
+
+    func test_inner_dict() {
+        let expectedDicts = [
+            "a": 1,
+            "b": 3,
+            "c": 3,
+            "d": 4,
+        ]
+        let actualDicts = [
+            "a": 1,
+            "b": 2,
+            "c": 6,
+            "d": 0,
+        ]
+
+        let expectedAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [], dictionaryOfInts: expectedDicts)
+        let actualAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [], dictionaryOfInts: actualDicts)
+
+        let newPersonExpected = NewPerson(name: "Krzysztof", age: 29, address: expectedAddress, secondAddress: expectedAddress, pet: nil)
+        let newPersonActual = NewPerson(name: "Krzysztof", age: 29, address: actualAddress, secondAddress: actualAddress, pet: nil)
+
+        let results = diff(newPersonExpected, newPersonActual)
+
+        XCTAssertEqual(results.first!, "" )
+        print(results.joined(separator: "\n"))
+
+     }
+
+    func test_multiple_child_failures() {
+        let expectedContainer = Container1(
+            topValue: 1,
+            container2: .init(
+                value: 2,
+                container3: .init(
+                    value: 3,
+                    container4: .init(value: 4)
+                )
+            )
+        )
+
+        let actualContainer = Container1(
+            topValue: -1,
+            container2: .init(
+                value: -2,
+                container3: .init(
+                    value: -3,
+                    container4: .init(value: -4)
+                )
+            )
+        )
+
+        let results = diff(expectedContainer, actualContainer)
+
+        print("@@@@@@@@@@@@")
+        print(results.joined(separator: "\n"))
+        print("@@@@@@@@@@@@")
     }
 //
 //    static var allTests = [
@@ -168,4 +240,49 @@ class DifferenceTests: XCTestCase {
 //        ("test_canFindOptionalDifferenceBetweenSomeAndNone", test_canFindOptionalDifferenceBetweenSomeAndNone),
 //        ("test_canFindDictionaryDifference", test_canFindDictionaryDifference)
 //    ]
+}
+
+fileprivate struct Container1: Equatable {
+    let topValue: Int
+    let container2: Container2
+
+    struct Container2: Equatable {
+        let value: Int
+        let container3: Container3
+
+        struct Container3: Equatable {
+            let value: Int
+            let container4: Container4
+
+            struct Container4: Equatable {
+                let value: Int
+            }
+        }
+    }
+}
+
+fileprivate struct NewPerson: Equatable {
+    let name: String
+    let age: Int
+
+    struct Address: Equatable {
+        let street: String
+        let postCode: String
+
+        struct ComplexCounter: Equatable {
+            let counter: Int
+        }
+        let counter: ComplexCounter
+
+        let setOfInts: Set<Int>
+        let dictionaryOfInts: [String: Int]
+    }
+
+    struct Pet: Equatable {
+        let name: String
+    }
+
+    let address: Address
+    let secondAddress: Address
+    let pet: Pet?
 }
