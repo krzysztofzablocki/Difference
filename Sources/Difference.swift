@@ -27,15 +27,32 @@ fileprivate extension Mirror {
         default: return "Child"
         }
     }
+
+    // Used to show "different count" message if mirror has no children,
+    // as some displayStyles can have 0 children.
+    var canBeEmpty: Bool {
+        switch self.displayStyle {
+        case .collection,
+             .dictionary,
+             .set:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
-fileprivate func handleChildlessEnum<T>(
+fileprivate func handleChildless<T>(
     _ expected: T,
     _ received: T,
     _ indentationLevel: Int
 ) -> String {
     let expectedMirror = Mirror(reflecting: expected)
     let receivedMirror = Mirror(reflecting: received)
+
+    guard !expectedMirror.canBeEmpty else {
+        return generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, indentationLevel)
+    }
 
     let receivedPrintable: String
     let expectedPrintable: String
@@ -52,6 +69,21 @@ fileprivate func handleChildlessEnum<T>(
     return "R7" + generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, indentationLevel)
 }
 
+private func generateDifferentCountBlock<T>(
+    _ expected: T,
+    _ expectedMirror: Mirror,
+    _ received: T,
+    _ receivedMirror: Mirror,
+    _ indentationLevel: Int
+) -> String {
+    let expectedPrintable = "(\(expectedMirror.children.count)) \(expected)"
+    let receivedPrintable = "(\(receivedMirror.children.count)) \(received)"
+    let header = "R10\(indentation(level: indentationLevel))Different count:\n"
+    return header
+        + "R1"
+        + generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, indentationLevel + 1)
+}
+
 /// Compares 2 objects and iterates over their differences
 ///
 /// - Parameters:
@@ -64,7 +96,7 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
 
     guard expectedMirror.children.count != 0, receivedMirror.children.count != 0 else {
         if String(dumping: received) != String(dumping: expected) {
-            closure(handleChildlessEnum(expected, received, level))
+            closure(handleChildless(expected, received, level))
         }
         return
     }
@@ -74,14 +106,8 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
     case (.collection?, .collection?) where hasDiffNumOfChildren,
          (.dictionary?, .dictionary?) where hasDiffNumOfChildren,
          (.set?, .set?) where hasDiffNumOfChildren:
-        let expectedPrintable = "(\(expectedMirror.children.count)) \(expected)"
-        let receivedPrintable = "(\(receivedMirror.children.count)) \(received)"
-        let header = "\(indentation(level: level))Different count:\n"
-        closure(
-            header
-                + "R1"
-                + generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, level + 1)
-        )
+        let toPrint = generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, level)
+        closure(toPrint)
         return
     case (.dictionary?, .dictionary?):
         if let expectedDict = expected as? Dictionary<AnyHashable, Any>,
@@ -147,7 +173,8 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                     closure("R8\(indentation(level: level))\(expectedMirror.displayStyleDescriptor) \(lhs.label ?? ""):\n" + results.joined())
                 }
             } else { // todo maybe remove
-                closure("R9\(expectedMirror.displayStyleDescriptor) \(lhs.label ?? ""):\n" + "R6" + generateExpectedReceiveBlock(String(describing: lhs.value), String(describing: rhs.value), level + 1))
+                let childName = "R9\(indentation(level: level))\(expectedMirror.displayStyleDescriptor) \(lhs.label ?? ""):\n"
+                closure(childName + "R6" + generateExpectedReceiveBlock(String(describing: lhs.value), String(describing: rhs.value), level + 1))
 //                closure("\(lhs.label ?? "") received: \(rhs.value) expected: \(lhs.value)\n")
             }
         }
@@ -163,6 +190,7 @@ private func generateExpectedReceiveBlock(
     return """
     \(indentationSpacing)Received: \(received)
     \(indentationSpacing)Expected: \(expected)
+
     """
     //"\(indentationSpacing)Received: \(received)\n\(indentationSpacing)Expected: \(expected)\n"
 }
