@@ -1,47 +1,5 @@
 import Foundation
 
-fileprivate extension String {
-    init<T>(dumping object: T) {
-        self.init()
-        dump(object, to: &self)
-        self = withoutDumpArtifacts
-    }
-
-    private var withoutDumpArtifacts: String {
-        self.replacingOccurrences(of: "- ", with: "")
-            .replacingOccurrences(of: "\n", with: "")
-    }
-}
-
-private func enumLabelFromFirstChild(_ mirror: Mirror) -> String? {
-    switch mirror.displayStyle {
-    case .enum: return mirror.children.first?.label
-    default: return nil
-    }
-}
-
-fileprivate extension Mirror {
-    var displayStyleDescriptor: String {
-        switch self.displayStyle {
-        case .enum: return "Enum"
-        default: return "Child"
-        }
-    }
-
-    // Used to show "different count" message if mirror has no children,
-    // as some displayStyles can have 0 children.
-    var canBeEmpty: Bool {
-        switch self.displayStyle {
-        case .collection,
-             .dictionary,
-             .set:
-            return true
-        default:
-            return false
-        }
-    }
-}
-
 fileprivate func handleChildless<T>(
     _ expected: T,
     _ received: T,
@@ -132,11 +90,11 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
 
             var results = [String]()
             uniqueExpected.forEach { unique in
-                results.append("R3 SetElement missing: \(unique.description)\n")
+                results.append("R3\(indentation(level: level))Missing: \(unique.description)\n")
             }
 
             if !uniqueExpected.isEmpty {
-                closure(results.joined(separator: "\(indentation(level: max(level + 1, 1)))"))
+                closure(results.joined())
             }
             return
         }
@@ -153,10 +111,6 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
 
         closure("R5" + generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, level))
         return
-//        closure("\(indentation(level: level))R5 Received: \(received) Expected: \(expected)\n")
-
-//    case (.optional?, .optional?) where hasDiffNumOfChildren:
-
     default:
         break
     }
@@ -165,7 +119,7 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
     zipped.forEach { (lhs, rhs) in
         let leftDump = String(dumping: lhs.value)
         if leftDump != String(dumping: rhs.value) {
-            if let notPrimitive = Mirror(reflecting: lhs.value).displayStyle/*, notPrimitive != .tuple*/ {
+            if Mirror(reflecting: lhs.value).displayStyle != nil {
                 var results = [String]()
                 diff(lhs.value, rhs.value, level: level + 1) { diff in
                     results.append(diff)
@@ -173,10 +127,9 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                 if !results.isEmpty {
                     closure("R8\(indentation(level: level))\(expectedMirror.displayStyleDescriptor) \(lhs.label ?? ""):\n" + results.joined())
                 }
-            } else { // todo maybe remove
+            } else {
                 let childName = "R9\(indentation(level: level))\(expectedMirror.displayStyleDescriptor) \(lhs.label ?? ""):\n"
                 closure(childName + "R6" + generateExpectedReceiveBlock(String(describing: lhs.value), String(describing: rhs.value), level + 1))
-//                closure("\(lhs.label ?? "") received: \(rhs.value) expected: \(lhs.value)\n")
             }
         }
     }
@@ -193,7 +146,48 @@ private func generateExpectedReceiveBlock(
     \(indentationSpacing)Expected: \(expected)
 
     """
-    //"\(indentationSpacing)Received: \(received)\n\(indentationSpacing)Expected: \(expected)\n"
+}
+
+fileprivate extension String {
+    init<T>(dumping object: T) {
+        self.init()
+        dump(object, to: &self)
+        self = withoutDumpArtifacts
+    }
+
+    private var withoutDumpArtifacts: String {
+        self.replacingOccurrences(of: "- ", with: "")
+            .replacingOccurrences(of: "\n", with: "")
+    }
+}
+
+private func enumLabelFromFirstChild(_ mirror: Mirror) -> String? {
+    switch mirror.displayStyle {
+    case .enum: return mirror.children.first?.label
+    default: return nil
+    }
+}
+
+fileprivate extension Mirror {
+    var displayStyleDescriptor: String {
+        switch self.displayStyle {
+        case .enum: return "Enum"
+        default: return "Child"
+        }
+    }
+
+    // Used to show "different count" message if mirror has no children,
+    // as some displayStyles can have 0 children.
+    var canBeEmpty: Bool {
+        switch self.displayStyle {
+        case .collection,
+             .dictionary,
+             .set:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 private func indentation(level: Int) -> String {
@@ -234,8 +228,3 @@ public func dumpDiff<T: Equatable>(_ expected: T, _ received: T) {
 public func dumpDiff<T>(_ expected: T, _ received: T) {
     diff(expected, received).forEach { print($0) }
 }
-
-// TO CHECK:
-//DONE Enum with different contents
-// Enum with different label
-// Enum with nil, rather than a value
