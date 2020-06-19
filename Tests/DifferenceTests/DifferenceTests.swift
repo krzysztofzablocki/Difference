@@ -86,7 +86,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(2, 3)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R7Received: 3\nExpected: 2\n")
+        XCTAssertEqual(results.first, "Received: 3\nExpected: 2\n")
     }
 
     fileprivate let truth = Person()
@@ -98,7 +98,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R9Child age:\nR6|\tReceived: 30\n|\tExpected: 29\n")
+        XCTAssertEqual(results.first, "Child age:\n|\tReceived: 30\n|\tExpected: 29\n")
 
     }
 
@@ -109,18 +109,18 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 2)
-        XCTAssertEqual(results.first, "R9Child name:\nR6|\tReceived: Adam\n|\tExpected: Krzysztof\n")
-        XCTAssertEqual(results.last, "R9Child age:\nR6|\tReceived: 30\n|\tExpected: 29\n")
+        XCTAssertEqual(results.first, "Child name:\n|\tReceived: Adam\n|\tExpected: Krzysztof\n")
+        XCTAssertEqual(results.last, "Child age:\n|\tReceived: 30\n|\tExpected: 29\n")
     }
 
     func testCanFindComplexDifference() {
         let stub = Person(address: Person.Address(street: "2nd Street", counter: .init(counter: 1)))
 
-//        dumpDiffSurround(truth, stub)
+        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R8Child address:\nR9|\tChild street:\nR6|\t|\tReceived: 2nd Street\n|\t|\tExpected: Times Square\nR8|\tChild counter:\nR9|\t|\tChild counter:\nR6|\t|\t|\tReceived: 1\n|\t|\t|\tExpected: 2\n")
+        XCTAssertEqual(results.first, "Child address:\n|\tChild street:\n|\t|\tReceived: 2nd Street\n|\t|\tExpected: Times Square\n|\tChild counter:\n|\t|\tChild counter:\n|\t|\t|\tReceived: 1\n|\t|\t|\tExpected: 2\n")
 
     }
 
@@ -150,18 +150,30 @@ class DifferenceTests: XCTestCase {
         let results = diff([1], [1, 3])
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R10Different count:\nR1|\tReceived: (2) [1, 3]\n|\tExpected: (1) [1]\n")
+        XCTAssertEqual(results.first, "Different count:\n|\tReceived: (2) [1, 3]\n|\tExpected: (1) [1]\n")
     }
 
     func test_canFindCollectionCountDifference_complex() {
         let truth = State.loaded([1, 2], "truth")
         let stub = State.loaded([], "stub")
-//        dumpDiffSurround(truth, stub)
+        dumpDiffSurround(truth, stub)
 
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R8Enum loaded:\nR8|\tChild .0:\nR10|\t|\tDifferent count:\nR1|\t|\t|\tReceived: (0) []\n|\t|\t|\tExpected: (2) [1, 2]\nR9|\tChild .1:\nR6|\t|\tReceived: stub\n|\t|\tExpected: truth\n")
+        XCTAssertEqual(results.first, "Enum loaded:\n|\tChild .0:\n|\t|\tDifferent count:\n|\t|\t|\tReceived: (0) []\n|\t|\t|\tExpected: (2) [1, 2]\n|\tChild .1:\n|\t|\tReceived: stub\n|\t|\tExpected: truth\n")
+    }
+
+    func test_labelsArrayElementsInDiff() {
+        let truth = [Person(), Person(name: "John")]
+        let stub = [Person(name: "John"), Person()]
+
+        dumpDiffSurround(truth, stub)
+        let results = diff(truth, stub)
+
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(results.first, "Collection[0]:\n|\tChild name:\n|\t|\tReceived: John\n|\t|\tExpected: Krzysztof\n")
+        XCTAssertEqual(results.last, "Collection[1]:\n|\tChild name:\n|\t|\tReceived: Krzysztof\n|\t|\tExpected: John\n")
     }
 
     // MARK: Enums
@@ -174,7 +186,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R5Received: anotherLoaded\nExpected: loaded\n")
+        XCTAssertEqual(results.first, "Received: anotherLoaded\nExpected: loaded\n")
     }
 
     func test_canFindEnumCaseDifferenceWhenLessArguments() {
@@ -185,7 +197,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R5Received: loadedWithDiffArguments\nExpected: loaded\n")
+        XCTAssertEqual(results.first, "Received: loadedWithDiffArguments\nExpected: loaded\n")
     }
 
     // MARK: Dictionaries
@@ -198,7 +210,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R8Child petAges:\nR8|\tChild some:\nR10|\t|\tDifferent count:\nR1|\t|\t|\tReceived: (0) [:]\n|\t|\t|\tExpected: (1) [\"Henny\": 4]\n")
+        XCTAssertEqual(results.first, "Child petAges:\n|\tChild some:\n|\t|\tDifferent count:\n|\t|\t|\tReceived: (0) [:]\n|\t|\t|\tExpected: (1) [\"Henny\": 4]\n")
     }
 
     func test_canFindOptionalDifferenceBetweenSomeAndNone() {
@@ -209,7 +221,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        let header = "R8Child petAges:\nR7|\tReceived: nil\n|\tExpected: Optional(["
+        let header = "Child petAges:\n|\tReceived: nil\n|\tExpected: Optional(["
         let hennyDiff = "\"Henny\": 4"
         let jethroDiff = "\"Jethro\": 6"
         let endingDiff = "])\n"
@@ -226,9 +238,9 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        let header = "R8Child petAges:\nR8|\tChild some:\n"
-        let jethroDiff = "R2|\t|\tChild key Jethro:\nR9|\t|\t|\tChild some:\nR6|\t|\t|\t|\tReceived: 2\n|\t|\t|\t|\tExpected: 6\n"
-        let hennyDiff = "R2|\t|\tChild key Henny:\nR9|\t|\t|\tChild some:\nR6|\t|\t|\t|\tReceived: 1\n|\t|\t|\t|\tExpected: 4\n"
+        let header = "Child petAges:\n|\tChild some:\n"
+        let jethroDiff = "|\t|\tChild key Jethro:\n|\t|\t|\tChild some:\n|\t|\t|\t|\tReceived: 2\n|\t|\t|\t|\tExpected: 6\n"
+        let hennyDiff = "|\t|\tChild key Henny:\n|\t|\t|\tChild some:\n|\t|\t|\t|\tReceived: 1\n|\t|\t|\t|\tExpected: 4\n"
         let firstPermutation = header + jethroDiff + hennyDiff
         let secondPermutation = header + hennyDiff + jethroDiff
         XCTAssertTrue(assertEither(expected: (firstPermutation, secondPermutation), received: results.first))
@@ -244,7 +256,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R8Child favoriteFoods:\nR8|\tChild some:\nR10|\t|\tDifferent count:\nR1|\t|\t|\tReceived: (1) [\"Oysters\"]\n|\t|\t|\tExpected: (0) []\n")
+        XCTAssertEqual(results.first, "Child favoriteFoods:\n|\tChild some:\n|\t|\tDifferent count:\n|\t|\t|\tReceived: (1) [\"Oysters\"]\n|\t|\t|\tExpected: (0) []\n")
     }
 
     func test_canFindOptionalSetDifferenceBetweenSomeAndNone() {
@@ -255,7 +267,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "R8Child favoriteFoods:\nR7|\tReceived: nil\n|\tExpected: Optional(Set([\"Oysters\"]))\n")
+        XCTAssertEqual(results.first, "Child favoriteFoods:\n|\tReceived: nil\n|\tExpected: Optional(Set([\"Oysters\"]))\n")
     }
 
     func test_canFindSetDifference() {
@@ -266,9 +278,9 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        let header = "R8Child favoriteFoods:\nR8|\tChild some:\n"
-        let sushiDiff = "R3|\t|\tMissing: Sushi\n"
-        let pizzaDiff = "R3|\t|\tMissing: Pizza\n"
+        let header = "Child favoriteFoods:\n|\tChild some:\n"
+        let sushiDiff = "|\t|\tMissing: Sushi\n"
+        let pizzaDiff = "|\t|\tMissing: Pizza\n"
         let firstPermutation = header + sushiDiff + pizzaDiff
         let secondPermutation = header + pizzaDiff + sushiDiff
         XCTAssertTrue(assertEither(expected: (firstPermutation, secondPermutation), received: results.first))

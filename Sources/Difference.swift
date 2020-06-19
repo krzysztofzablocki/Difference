@@ -24,7 +24,7 @@ fileprivate func handleChildless<T>(
         receivedPrintable = String(describing: received)
         expectedPrintable = String(describing: expected)
     }
-    return "R7" + generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, indentationLevel)
+    return generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, indentationLevel)
 }
 
 private func generateDifferentCountBlock<T>(
@@ -36,10 +36,8 @@ private func generateDifferentCountBlock<T>(
 ) -> String {
     let expectedPrintable = "(\(expectedMirror.children.count)) \(expected)"
     let receivedPrintable = "(\(receivedMirror.children.count)) \(received)"
-    let header = "R10\(indentation(level: indentationLevel))Different count:\n"
-    return header
-        + "R1"
-        + generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, indentationLevel + 1)
+    let header = "\(indentation(level: indentationLevel))Different count:\n"
+    return header + generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, indentationLevel + 1)
 }
 
 /// Compares 2 objects and iterates over their differences
@@ -76,7 +74,7 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                     results.append(diff)
                 }
                 if !results.isEmpty {
-                    let header = "R2\(indentation(level: level))Child key \(key.description):\n"
+                    let header = "\(indentation(level: level))Child key \(key.description):\n"
                     closure(header + results.joined())
                 }
             }
@@ -90,7 +88,7 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
 
             var results = [String]()
             uniqueExpected.forEach { unique in
-                results.append("R3\(indentation(level: level))Missing: \(unique.description)\n")
+                results.append("\(indentation(level: level))Missing: \(unique.description)\n")
             }
 
             if !uniqueExpected.isEmpty {
@@ -100,7 +98,7 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
         }
     case (.enum?, .enum) where hasDiffNumOfChildren:
         closure("""
-            R4 Different count:
+            Different count:
             \(indentation(level: level))Received: \(received) (\(receivedMirror.children.count))
             \(indentation(level: level))Expected: \(expected) (\(expectedMirror.children.count))\n
             """)
@@ -109,14 +107,16 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
         let expectedPrintable = expectedMirror.children.first?.label ?? "UNKNOWN"
         let receivedPrintable = receivedMirror.children.first?.label ?? "UNKNOWN"
 
-        closure("R5" + generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, level))
+        closure(generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, level))
         return
     default:
         break
     }
 
     let zipped = zip(expectedMirror.children, receivedMirror.children)
-    zipped.forEach { (lhs, rhs) in
+    zipped.enumerated().forEach { (index, zippedValues) in
+        let lhs = zippedValues.0
+        let rhs = zippedValues.1
         let leftDump = String(dumping: lhs.value)
         if leftDump != String(dumping: rhs.value) {
             if Mirror(reflecting: lhs.value).displayStyle != nil {
@@ -125,11 +125,11 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                     results.append(diff)
                 }
                 if !results.isEmpty {
-                    closure("R8\(indentation(level: level))\(expectedMirror.displayStyleDescriptor) \(lhs.label ?? ""):\n" + results.joined())
+                    closure("\(indentation(level: level))\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):\n" + results.joined())
                 }
             } else {
-                let childName = "R9\(indentation(level: level))\(expectedMirror.displayStyleDescriptor) \(lhs.label ?? ""):\n"
-                closure(childName + "R6" + generateExpectedReceiveBlock(String(describing: lhs.value), String(describing: rhs.value), level + 1))
+                let childName = "\(indentation(level: level))\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):\n"
+                closure(childName + generateExpectedReceiveBlock(String(describing: lhs.value), String(describing: rhs.value), level + 1))
             }
         }
     }
@@ -169,10 +169,11 @@ private func enumLabelFromFirstChild(_ mirror: Mirror) -> String? {
 }
 
 fileprivate extension Mirror {
-    var displayStyleDescriptor: String {
+    func displayStyleDescriptor(index: Int) -> String {
         switch self.displayStyle {
-        case .enum: return "Enum"
-        default: return "Child"
+        case .enum: return "Enum "
+        case .collection: return "Collection[\(index)]"
+        default: return ""
         }
     }
 
