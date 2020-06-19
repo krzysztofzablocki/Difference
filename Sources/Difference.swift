@@ -118,7 +118,8 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                     results.append(diff)
                 }
                 if !results.isEmpty {
-                    closure("R2 Child key \(key.description):\n\(indentation(level: max(level + 1, 1)))" + results.joined(separator: "\n\(indentation(level: max(level + 1, 1)))"))
+                    let header = "R2\(indentation(level: level))Child key \(key.description):\n"
+                    closure(header + results.joined())
                 }
             }
             return

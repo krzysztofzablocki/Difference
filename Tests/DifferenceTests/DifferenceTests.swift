@@ -13,24 +13,58 @@ import Difference
 fileprivate struct Person: Equatable {
     let name: String
     let age: Int
+    let address: Address
+    let pet: Pet?
+    let petAges: [String: Int]?
+    let favoriteFoods: Set<String>?
+
+    init(
+        name: String = "Krzysztof",
+        age: Int = 29,
+        address: Address = .init(),
+        pet: Pet? = .init(),
+        petAges: [String: Int]? = nil,
+        favoriteFoods: Set<String>? = nil
+    ) {
+        self.name = name
+        self.age = age
+        self.address = address
+        self.pet = pet
+        self.petAges = petAges
+        self.favoriteFoods = favoriteFoods
+    }
 
     struct Address: Equatable {
         let street: String
         let postCode: String
+        let counter: ComplexCounter
+
+        init(
+            street: String = "Times Square",
+            postCode: String = "00-1000",
+            counter: ComplexCounter = .init()
+        ) {
+            self.street = street
+            self.postCode = postCode
+            self.counter = counter
+        }
 
         struct ComplexCounter: Equatable {
             let counter: Int
+
+            init(counter: Int = 2) {
+                self.counter = counter
+            }
         }
-        let counter: ComplexCounter
-    }
-    
-    struct Pet: Equatable {
-        let name: String
     }
 
-    let address: Address
-    let pet: Pet?
-    let petAges: [String: Int]
+    struct Pet: Equatable {
+        let name: String
+
+        init(name: String = "Fluffy") {
+            self.name = name
+        }
+    }
 }
 
 private enum State {
@@ -54,10 +88,10 @@ class DifferenceTests: XCTestCase {
         XCTAssertEqual(results.first, "R7Received: 3\nExpected: 2\n")
     }
 
-    fileprivate let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil, petAges: [:])
+    fileprivate let truth = Person()
 
     func testCanFindPrimitiveDifference() {
-        let stub = Person(name: "Krzysztof", age: 30, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil, petAges: [:])
+        let stub = Person(age: 30)
 
 //        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
@@ -68,7 +102,7 @@ class DifferenceTests: XCTestCase {
     }
 
     func testCanFindMultipleDifference() {
-        let stub = Person(name: "Adam", age: 30, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil, petAges: [:])
+        let stub = Person(name: "Adam", age: 30)
 
 //        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
@@ -79,7 +113,7 @@ class DifferenceTests: XCTestCase {
     }
 
     func testCanFindComplexDifference() {
-        let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "2nd Street", postCode: "00-1000", counter: .init(counter: 1)), pet: nil, petAges: [:])
+        let stub = Person(address: Person.Address(street: "2nd Street", counter: .init(counter: 1)))
 
 //        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
@@ -90,9 +124,9 @@ class DifferenceTests: XCTestCase {
     }
 
     func testCanGiveDescriptionForOptionalOnLeftSide() {
-        let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil, petAges: [:])
+        let truth = Person(pet: nil)
 
-        let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: .init(name: "Fluffy"), petAges: [:])
+        let stub = Person()
 
 //        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
@@ -100,9 +134,9 @@ class DifferenceTests: XCTestCase {
     }
 
     func testCanGiveDescriptionForOptionalOnRightSide() {
-        let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: .init(name: "Fluffy"), petAges: [:])
+        let truth = Person()
 
-        let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil, petAges: [:])
+        let stub = Person(pet: nil)
 
 //        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
@@ -110,7 +144,7 @@ class DifferenceTests: XCTestCase {
     }
 
     func test_canFindCollectionCountDifference() {
-        dumpDiffSurround([1], [1, 3])
+//        dumpDiffSurround([1], [1, 3])
 
         let results = diff([1], [1, 3])
 
@@ -141,69 +175,64 @@ class DifferenceTests: XCTestCase {
     }
 
     func test_canFindDictionaryCountDifference() {
-        let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: .init(name: "Fluffy"), petAges: ["Max": 4, "Jethro": 6])
+        let truth = Person(petAges: ["Henny": 4, "Jethro": 6])
 
-        let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil, petAges: ["Max": 1, "Jethro": 2])
+        let stub = Person(petAges: ["Henny": 1])
 
-        dumpDiffSurround(truth, stub)
+//        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "received: \"[:]\" expected: \"[\"A\": \"B\"]\"\n")
+        XCTAssertEqual(results.first, "R8Child petAges:\nR8|\tChild some:\nR10|\t|\tDifferent count:\nR1|\t|\t|\tReceived: (1) [\"Henny\": 1]\n|\t|\t|\tExpected: (2) [\"Henny\": 4, \"Jethro\": 6]\n")
     }
 
-//    func test_canFindDictionaryCountDifference_complex() {
-//        let truth = ["A": "B"]
-//        let stub = Dictionary<String, String>()
-//
-//        dumpDiffSurround(truth, stub)
-//        let results = diff(truth, stub)
-//
-//        XCTAssertEqual(results.count, 1)
-//        XCTAssertEqual(results.first, "received: \"[:]\" expected: \"[\"A\": \"B\"]\"\n")
-//    }
+    func test_canFindOptionalDifferenceBetweenSomeAndNone() {
+        let truth = Person(petAges: ["Henny": 4, "Jethro": 6])
 
-//    func test_canFindOptionalDifferenceBetweenSomeAndNone() {
-//        let results = diff(["A": "B"], nil)
-//
-//        XCTAssertEqual(results.count, 1)
-//        XCTAssertEqual(results.first, "received: \"nil\" expected: \"Optional([\"A\": \"B\"])\"\n")
-//    }
-//
-//    func test_canFindDictionaryDifference() {
-//        let results = diff(
-//            [
-//                "a": 1,
-//                "b": 3,
-//                "c": 3,
-//                "d": 4,
-//            ],
-//            [
-//                "a": 1,
-//                "b": 2,
-//                "c": 3,
-//                "d": 0,
-//            ]
-//        )
-//
-//        // TODO: Should results.count be 2?
-//        XCTAssertEqual(results.count, 2)
-//        XCTAssertEqual(results.first, "")
-//    }
-//
-//    func test_set() {
-//        (0..<1000).forEach { _ in
-//            let expected: Set<Int> = [1, 2, 3, 4, 5]
-//            let actual: Set<Int> = [7, 6, 5, 4, 3]
-//
-//            let results = diff(expected, actual)
-//
-//            XCTAssertEqual(results.count, 1)
-//                // Need to figure out how to get consistent ordering of a set in the result. Alternately, reduce this test to only 1 diff.
-//            XCTAssertEqual(results.first!, "Set mismatch:\n\tvalue received: \"7\" expected: \"2\"\n\tvalue received: \"6\" expected: \"1\"\n" )
-//        }
-//    }
-//
+        let stub = Person(petAges: nil)
+
+//        dumpDiffSurround(truth, stub)
+        let results = diff(truth, stub)
+
+        XCTAssertEqual(results.count, 1)
+        let header = "R8Child petAges:\nR7|\tReceived: nil\n|\tExpected: Optional(["
+        let hennyDiff = "\"Henny\": 4"
+        let jethroDiff = "\"Jethro\": 6"
+        let endingDiff = "])\n"
+        let firstPermutation = header + hennyDiff + ", " + jethroDiff + endingDiff
+        let secondPermutation = header + jethroDiff + ", " + hennyDiff + endingDiff
+        XCTAssertTrue(assertEither(expected: (firstPermutation, secondPermutation), received: results.first))
+    }
+
+    func test_canFindDictionaryDifference() {
+        let truth = Person(petAges: ["Henny": 4, "Jethro": 6])
+
+        let stub = Person(petAges: ["Henny": 1, "Jethro": 2])
+
+//        dumpDiffSurround(truth, stub)
+        let results = diff(truth, stub)
+
+        XCTAssertEqual(results.count, 1)
+        let header = "R8Child petAges:\nR8|\tChild some:\n"
+        let jethroDiff = "R2|\t|\tChild key Jethro:\nR9|\t|\t|\tChild some:\nR6|\t|\t|\t|\tReceived: 2\n|\t|\t|\t|\tExpected: 6\n"
+        let hennyDiff = "R2|\t|\tChild key Henny:\nR9|\t|\t|\tChild some:\nR6|\t|\t|\t|\tReceived: 1\n|\t|\t|\t|\tExpected: 4\n"
+        let firstPermutation = header + jethroDiff + hennyDiff
+        let secondPermutation = header + hennyDiff + jethroDiff
+        XCTAssertTrue(assertEither(expected: (firstPermutation, secondPermutation), received: results.first))
+    }
+
+    func test_canFindSetCountDifferent() {
+        let truth = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil, petAges: ["Henny": 4, "Jethro": 6])
+
+        let stub = Person(name: "Krzysztof", age: 29, address: Person.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2)), pet: nil, petAges: ["Henny": 1])
+
+//        dumpDiffSurround(truth, stub)
+        let results = diff(truth, stub)
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first, "R8Child petAges:\nR8|\tChild some:\nR10|\t|\tDifferent count:\nR1|\t|\t|\tReceived: (1) [\"Henny\": 1]\n|\t|\t|\tExpected: (2) [\"Henny\": 4, \"Jethro\": 6]\n")
+    }
+
 //    func test_inner_set() {
 //        let expectedAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [1, 2, 3, 4, 5], dictionaryOfInts: ["a":1])
 //        let actualAddress = NewPerson.Address(street: "Times Square", postCode: "00-1000", counter: .init(counter: 2), setOfInts: [3, 4, 5, 6, 7], dictionaryOfInts: ["a":2])
@@ -277,6 +306,19 @@ class DifferenceTests: XCTestCase {
 //        print(results.joined(separator: "\n"))
 //        print("@@@@@@@@@@@@")
 //    }
+}
+
+private func assertEither<T: Equatable>(
+    expected: (T, T),
+    received: T
+) -> Bool {
+    if expected.0 == received {
+        return true
+    } else if expected.1 == received {
+        return true
+    } else {
+        return false
+    }
 }
 
 fileprivate struct Container1: Equatable {
