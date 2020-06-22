@@ -75,7 +75,6 @@ private enum State {
 }
 
 class DifferenceTests: XCTestCase {
-
     func testCanFindRootPrimitiveDifference() {
         let results = diff(2, 3)
 
@@ -237,4 +236,26 @@ class DifferenceTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first, "favoriteFoods:\n|\tsome:\n|\t|\tMissing: Pizza\n|\t|\tMissing: Sushi\n")
     }
+}
+
+extension DifferenceTests {
+    static var allTests = [
+        ("testCanFindRootPrimitiveDifference", testCanFindRootPrimitiveDifference),
+        ("testCanFindPrimitiveDifference", testCanFindPrimitiveDifference),
+        ("testCanFindMultipleDifference", testCanFindMultipleDifference),
+        ("testCanFindComplexDifference", testCanFindComplexDifference),
+        ("testCanGiveDescriptionForOptionalOnLeftSide", testCanGiveDescriptionForOptionalOnLeftSide),
+        ("testCanGiveDescriptionForOptionalOnRightSide", testCanGiveDescriptionForOptionalOnRightSide),
+        ("test_canFindCollectionCountDifference", test_canFindCollectionCountDifference),
+        ("test_canFindCollectionCountDifference_complex", test_canFindCollectionCountDifference_complex),
+        ("test_labelsArrayElementsInDiff", test_labelsArrayElementsInDiff),
+        ("test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical", test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical),
+        ("test_canFindEnumCaseDifferenceWhenLessArguments", test_canFindEnumCaseDifferenceWhenLessArguments),
+        ("test_canFindDictionaryCountDifference", test_canFindDictionaryCountDifference),
+        ("test_canFindOptionalDifferenceBetweenSomeAndNone", test_canFindOptionalDifferenceBetweenSomeAndNone),
+        ("test_canFindDictionaryDifference", test_canFindDictionaryDifference),
+        ("test_canFindSetCountDifference", test_canFindSetCountDifference),
+        ("test_canFindOptionalSetDifferenceBetweenSomeAndNone", test_canFindOptionalSetDifferenceBetweenSomeAndNone),
+        ("test_canFindSetDifference", test_canFindSetDifference)
+    ]
 }
