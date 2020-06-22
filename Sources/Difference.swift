@@ -1,66 +1,14 @@
+//
+//  Difference.swift
+//  Difference
+//
+//  Created by Krzysztof Zablocki on 18.10.2017
+//  Copyright © 2017 Krzysztof Zablocki. All rights reserved.
+//
+
 import Foundation
-/*
- TODO:
-    1. Remove Keypath prefixes
-    2. Sort results
-    3. Remove "some" child
- */
-public enum Difference {
-    /// Styling of the diff indentation.
-    /// `pipe` example:
-    ///     address:
-    ///     |    street:
-    ///     |    |    Received: 2nd Street
-    ///     |    |    Expected: Times Square
-    ///     |    counter:
-    ///     |    |    counter:
-    ///     |    |    |    Received: 1
-    ///     |    |    |    Expected: 2
-    /// `tab` example:
-    ///     address:
-    ///         street:
-    ///             Received: 2nd Street
-    ///             Expected: Times Square
-    ///         counter:
-    ///             counter:
-    ///                 Received: 1
-    ///                 Expected: 2
-    public enum IndentationType: String {
-        case pipe = "|\t"
-        case tab = "\t"
-    }
-}
 
 private typealias IndentationType = Difference.IndentationType
-
-private struct Line {
-    let contents: String
-    let indentationLevel: Int
-    let children: [Line]
-
-    var hasChildren: Bool { !children.isEmpty }
-
-    init(
-        contents: String,
-        indentationLevel: Int,
-        children: [Line] = []
-    ) {
-        self.contents = contents
-        self.indentationLevel = indentationLevel
-        self.children = children
-    }
-
-    func generateContents(indentationType: IndentationType) -> String {
-        let indentationString = indentation(level: indentationLevel, indentationType: indentationType)
-        let childrenContents = children.map { $0.generateContents(indentationType: indentationType)}
-            .joined()
-        return "\(indentationString)\(contents)\n" + childrenContents
-    }
-
-    private func indentation(level: Int, indentationType: IndentationType) -> String {
-        (0..<level).reduce("") { acc, _ in acc + "\(indentationType.rawValue)" }
-    }
-}
 
 fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [Line] {
     let expectedMirror = Mirror(reflecting: expected)
@@ -137,6 +85,61 @@ fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [
         }
     }
     return resultLines
+}
+
+public enum Difference {
+    /// Styling of the diff indentation.
+    /// `pipe` example:
+    ///     address:
+    ///     |    street:
+    ///     |    |    Received: 2nd Street
+    ///     |    |    Expected: Times Square
+    ///     |    counter:
+    ///     |    |    counter:
+    ///     |    |    |    Received: 1
+    ///     |    |    |    Expected: 2
+    /// `tab` example:
+    ///     address:
+    ///         street:
+    ///             Received: 2nd Street
+    ///             Expected: Times Square
+    ///         counter:
+    ///             counter:
+    ///                 Received: 1
+    ///                 Expected: 2
+    public enum IndentationType: String {
+        case pipe = "|\t"
+        case tab = "\t"
+    }
+}
+
+private struct Line {
+    let contents: String
+    let indentationLevel: Int
+    let children: [Line]
+
+    var hasChildren: Bool { !children.isEmpty }
+
+    init(
+        contents: String,
+        indentationLevel: Int,
+        children: [Line] = []
+    ) {
+        self.contents = contents
+        self.indentationLevel = indentationLevel
+        self.children = children
+    }
+
+    func generateContents(indentationType: IndentationType) -> String {
+        let indentationString = indentation(level: indentationLevel, indentationType: indentationType)
+        let childrenContents = children.map { $0.generateContents(indentationType: indentationType)}
+            .joined()
+        return "\(indentationString)\(contents)\n" + childrenContents
+    }
+
+    private func indentation(level: Int, indentationType: IndentationType) -> String {
+        (0..<level).reduce("") { acc, _ in acc + "\(indentationType.rawValue)" }
+    }
 }
 
 fileprivate func handleChildless<T>(
