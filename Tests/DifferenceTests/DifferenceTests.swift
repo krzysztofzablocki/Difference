@@ -82,7 +82,7 @@ private func dumpDiffSurround<T>(_ lhs: T, _ rhs: T) {
 class DifferenceTests: XCTestCase {
 
     func testCanFindRootPrimitiveDifference() {
-//        dumpDiffSurround(2, 3)
+        dumpDiffSurround(2, 3)
         let results = diff(2, 3)
 
         XCTAssertEqual(results.count, 1)
@@ -105,7 +105,7 @@ class DifferenceTests: XCTestCase {
     func testCanFindMultipleDifference() {
         let stub = Person(name: "Adam", age: 30)
 
-//        dumpDiffSurround(truth, stub)
+        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 2)
@@ -182,7 +182,7 @@ class DifferenceTests: XCTestCase {
         let truth = State.loaded([0], "CommonString")
         let stub = State.anotherLoaded([0], "CommonString")
 
-//        dumpDiffSurround(truth, stub)
+        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)

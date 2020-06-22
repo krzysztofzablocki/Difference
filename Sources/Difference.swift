@@ -1,15 +1,56 @@
 import Foundation
 
+/*
+    Line:
+        IndentationLevel: Int
+        child: Line?
+        contents: String
+ */
+
+enum IndentationType: String {
+    case pipe = "|\t"
+    case tab = "/t"
+}
+
+private struct Line {
+    let contents: String
+    let indentationLevel: Int
+    let children: [Line]
+
+    var hasChildren: Bool { !children.isEmpty }
+
+    init(
+        contents: String,
+        indentationLevel: Int,
+        children: [Line] = []
+    ) {
+        self.contents = contents
+        self.indentationLevel = indentationLevel
+        self.children = children
+    }
+
+    func generateContents(indentationType: IndentationType) -> String {
+        let indentationString = indentation(level: indentationLevel, indentationType: indentationType)
+        let childrenContents = children.map { $0.generateContents(indentationType: indentationType)}
+            .joined()
+        return "\(indentationString)\(contents)\n" + childrenContents
+    }
+
+    private func indentation(level: Int, indentationType: IndentationType) -> String {
+        (0..<level).reduce("") { acc, _ in acc + "\(indentationType.rawValue)" }
+    }
+}
+
 fileprivate func handleChildless<T>(
     _ expected: T,
     _ received: T,
     _ indentationLevel: Int
-) -> String {
+) -> [Line] {
     let expectedMirror = Mirror(reflecting: expected)
     let receivedMirror = Mirror(reflecting: received)
 
     guard !expectedMirror.canBeEmpty else {
-        return generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, indentationLevel)
+        return [generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, indentationLevel)]
     }
 
     let receivedPrintable: String
@@ -24,7 +65,7 @@ fileprivate func handleChildless<T>(
         receivedPrintable = String(describing: received)
         expectedPrintable = String(describing: expected)
     }
-    return generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, indentationLevel)
+    return generateExpectedReceiveLines(expectedPrintable, receivedPrintable, indentationLevel)
 }
 
 private func generateDifferentCountBlock<T>(
@@ -33,11 +74,29 @@ private func generateDifferentCountBlock<T>(
     _ received: T,
     _ receivedMirror: Mirror,
     _ indentationLevel: Int
-) -> String {
+) -> Line {
     let expectedPrintable = "(\(expectedMirror.children.count)) \(expected)"
     let receivedPrintable = "(\(receivedMirror.children.count)) \(received)"
-    let header = "\(indentation(level: indentationLevel))Different count:\n"
-    return header + generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, indentationLevel + 1)
+    return Line(
+        contents: "Different count:",
+        indentationLevel: indentationLevel,
+        children: generateExpectedReceiveLines(expectedPrintable, receivedPrintable, indentationLevel + 1)
+    )
+}
+
+fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: (_ description: String) -> Void) {
+    let lines = diffLines(expected, received)
+    let linesContents = lines.map { line in
+        line.generateContents(indentationType: .pipe)
+    }
+    let isOnlyTopLevelFailure = lines.map { $0.hasChildren }.filter { $0 }.isEmpty
+    if isOnlyTopLevelFailure {
+        closure(linesContents.joined())
+    } else {
+        linesContents.forEach { lineContents in
+            closure(lineContents)
+        }
+    }
 }
 
 /// Compares 2 objects and iterates over their differences
@@ -46,15 +105,15 @@ private func generateDifferentCountBlock<T>(
 ///   - lhs: expected object
 ///   - rhs: received object
 ///   - closure: iteration closure
-fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: (_ description: String) -> Void) {
+fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [Line] {
     let expectedMirror = Mirror(reflecting: expected)
     let receivedMirror = Mirror(reflecting: received)
 
     guard expectedMirror.children.count != 0, receivedMirror.children.count != 0 else {
         if String(dumping: received) != String(dumping: expected) {
-            closure(handleChildless(expected, received, level))
+            return handleChildless(expected, received, level)
         }
-        return
+        return []
     }
 
     let hasDiffNumOfChildren = expectedMirror.children.count != receivedMirror.children.count
@@ -62,57 +121,40 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
     case (.collection?, .collection?) where hasDiffNumOfChildren,
          (.dictionary?, .dictionary?) where hasDiffNumOfChildren,
          (.set?, .set?) where hasDiffNumOfChildren:
-        let toPrint = generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, level)
-        closure(toPrint)
-        return
+        return [generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, level)]
     case (.dictionary?, .dictionary?):
         if let expectedDict = expected as? Dictionary<AnyHashable, Any>,
             let receivedDict = received as? Dictionary<AnyHashable, Any> {
+            var resultLines: [Line] = []
             expectedDict.keys.forEach { key in
-                var results = [String]()
-                diff(expectedDict[key], receivedDict[key], level: level + 1) { diff in
-                    results.append(diff)
-                }
+                let results = diffLines(expectedDict[key], receivedDict[key], level: level + 1)
                 if !results.isEmpty {
-                    let header = "\(indentation(level: level))Key \(key.description):\n"
-                    closure(header + results.joined())
+                    resultLines.append(Line(contents: "Key \(key.description):", indentationLevel: level, children: results))
                 }
             }
-            return
+            return resultLines
         }
 
     case (.set?, .set?):
         if let expectedSet = expected as? Set<AnyHashable>,
             let receivedSet = received as? Set<AnyHashable> {
-            let uniqueExpected = expectedSet.subtracting(receivedSet)
 
-            var results = [String]()
-            uniqueExpected.forEach { unique in
-                results.append("\(indentation(level: level))Missing: \(unique.description)\n")
-            }
-
-            if !uniqueExpected.isEmpty {
-                closure(results.joined())
-            }
-            return
+            return expectedSet.subtracting(receivedSet)
+                .map { unique in
+                    Line(contents: "Missing: \(unique.description)", indentationLevel: level)
+                }
         }
     case (.enum?, .enum) where hasDiffNumOfChildren:
-        closure("""
-            Different count:
-            \(indentation(level: level))Received: \(received) (\(receivedMirror.children.count))
-            \(indentation(level: level))Expected: \(expected) (\(expectedMirror.children.count))\n
-            """)
-        return
+        return [generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, level)]
     case (.enum?, .enum?) where expectedMirror.children.first?.label != receivedMirror.children.first?.label:
         let expectedPrintable = expectedMirror.children.first?.label ?? "UNKNOWN"
         let receivedPrintable = receivedMirror.children.first?.label ?? "UNKNOWN"
-
-        closure(generateExpectedReceiveBlock(expectedPrintable, receivedPrintable, level))
-        return
+        return generateExpectedReceiveLines(expectedPrintable, receivedPrintable, level)
     default:
         break
     }
 
+    var resultLines = [Line]()
     let zipped = zip(expectedMirror.children, receivedMirror.children)
     zipped.enumerated().forEach { (index, zippedValues) in
         let lhs = zippedValues.0
@@ -120,32 +162,34 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
         let leftDump = String(dumping: lhs.value)
         if leftDump != String(dumping: rhs.value) {
             if Mirror(reflecting: lhs.value).displayStyle != nil {
-                var results = [String]()
-                diff(lhs.value, rhs.value, level: level + 1) { diff in
-                    results.append(diff)
-                }
+                let results = diffLines(lhs.value, rhs.value, level: level + 1)
                 if !results.isEmpty {
-                    closure("\(indentation(level: level))\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):\n" + results.joined())
+                    let line = Line(contents: "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):",
+                        indentationLevel: level,
+                        children: results
+                    )
+                    resultLines.append(line)
                 }
             } else {
-                let childName = "\(indentation(level: level))\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):\n"
-                closure(childName + generateExpectedReceiveBlock(String(describing: lhs.value), String(describing: rhs.value), level + 1))
+                let childName = "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):"
+                let children = generateExpectedReceiveLines(String(describing: lhs.value), String(describing: rhs.value), level + 1)
+                let line = Line(contents: childName, indentationLevel: level, children: children)
+                resultLines.append(line)
             }
         }
     }
+    return resultLines
 }
 
-private func generateExpectedReceiveBlock(
+private func generateExpectedReceiveLines(
     _ expected: String,
     _ received: String,
     _ indentationLevel: Int
-) -> String {
-    let indentationSpacing = indentation(level: indentationLevel)
-    return """
-    \(indentationSpacing)Received: \(received)
-    \(indentationSpacing)Expected: \(expected)
-
-    """
+) -> [Line] {
+    return [
+        Line(contents: "Received: \(received)", indentationLevel: indentationLevel),
+        Line(contents: "Expected: \(expected)", indentationLevel: indentationLevel)
+    ]
 }
 
 fileprivate extension String {
@@ -189,10 +233,6 @@ fileprivate extension Mirror {
             return false
         }
     }
-}
-
-private func indentation(level: Int) -> String {
-    return (0..<level).reduce("") { acc, _ in acc + "|\t" }
 }
 
 /// Builds list of differences between 2 objects
