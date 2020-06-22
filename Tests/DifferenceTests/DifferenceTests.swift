@@ -71,18 +71,12 @@ private enum State {
     case loaded([Int], String)
     case anotherLoaded([Int], String)
     case loadedWithDiffArguments(Int)
-}
-
-private func dumpDiffSurround<T>(_ lhs: T, _ rhs: T) {
-    print("====START DIFF====")
-    dumpDiff(lhs, rhs)
-    print("=====END DIFF=====")
+    case loadedWithNoArguments
 }
 
 class DifferenceTests: XCTestCase {
 
     func testCanFindRootPrimitiveDifference() {
-        dumpDiffSurround(2, 3)
         let results = diff(2, 3)
 
         XCTAssertEqual(results.count, 1)
@@ -93,8 +87,6 @@ class DifferenceTests: XCTestCase {
 
     func testCanFindPrimitiveDifference() {
         let stub = Person(age: 30)
-
-//        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -104,8 +96,6 @@ class DifferenceTests: XCTestCase {
 
     func testCanFindMultipleDifference() {
         let stub = Person(name: "Adam", age: 30)
-
-        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 2)
@@ -115,8 +105,6 @@ class DifferenceTests: XCTestCase {
 
     func testCanFindComplexDifference() {
         let stub = Person(address: Person.Address(street: "2nd Street", counter: .init(counter: 1)))
-
-        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -127,26 +115,22 @@ class DifferenceTests: XCTestCase {
     func testCanGiveDescriptionForOptionalOnLeftSide() {
         let truth = Person(pet: nil)
         let stub = Person()
-
-//        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
+
         XCTAssertEqual(results.count, 1)
     }
 
     func testCanGiveDescriptionForOptionalOnRightSide() {
         let truth = Person()
         let stub = Person(pet: nil)
-
-//        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
+
         XCTAssertEqual(results.count, 1)
     }
 
     // MARK: Collections
 
     func test_canFindCollectionCountDifference() {
-//        dumpDiffSurround([1], [1, 3])
-
         let results = diff([1], [1, 3])
 
         XCTAssertEqual(results.count, 1)
@@ -156,8 +140,6 @@ class DifferenceTests: XCTestCase {
     func test_canFindCollectionCountDifference_complex() {
         let truth = State.loaded([1, 2], "truthString")
         let stub = State.loaded([], "stubString")
-        dumpDiffSurround(truth, stub)
-
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -167,8 +149,6 @@ class DifferenceTests: XCTestCase {
     func test_labelsArrayElementsInDiff() {
         let truth = [Person(), Person(name: "John")]
         let stub = [Person(name: "John"), Person()]
-
-        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 2)
@@ -181,8 +161,6 @@ class DifferenceTests: XCTestCase {
     func test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical() {
         let truth = State.loaded([0], "CommonString")
         let stub = State.anotherLoaded([0], "CommonString")
-
-        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -192,8 +170,6 @@ class DifferenceTests: XCTestCase {
     func test_canFindEnumCaseDifferenceWhenLessArguments() {
         let truth = State.loaded([0], "CommonString")
         let stub = State.loadedWithDiffArguments(1)
-
-//        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -205,8 +181,6 @@ class DifferenceTests: XCTestCase {
     func test_canFindDictionaryCountDifference() {
         let truth = Person(petAges: ["Henny": 4])
         let stub = Person(petAges: [:])
-
-        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -216,8 +190,6 @@ class DifferenceTests: XCTestCase {
     func test_canFindOptionalDifferenceBetweenSomeAndNone() {
         let truth = Person(petAges: ["Henny": 4, "Jethro": 6])
         let stub = Person(petAges: nil)
-
-//        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -233,8 +205,6 @@ class DifferenceTests: XCTestCase {
     func test_canFindDictionaryDifference() {
         let truth = Person(petAges: ["Henny": 4, "Jethro": 6])
         let stub = Person(petAges: ["Henny": 1, "Jethro": 2])
-
-//        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -251,8 +221,6 @@ class DifferenceTests: XCTestCase {
     func test_canFindSetCountDifference() {
         let truth = Person(favoriteFoods: [])
         let stub = Person(favoriteFoods: ["Oysters"])
-
-//        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -262,8 +230,6 @@ class DifferenceTests: XCTestCase {
     func test_canFindOptionalSetDifferenceBetweenSomeAndNone() {
         let truth = Person(favoriteFoods: ["Oysters"])
         let stub = Person(favoriteFoods: nil)
-
-//        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
@@ -273,8 +239,6 @@ class DifferenceTests: XCTestCase {
     func test_canFindSetDifference() {
         let truth = Person(favoriteFoods: ["Sushi", "Pizza"])
         let stub = Person(favoriteFoods: ["Oysters", "Crab"])
-
-        dumpDiffSurround(truth, stub)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)

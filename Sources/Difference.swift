@@ -1,16 +1,37 @@
 import Foundation
-
 /*
-    Line:
-        IndentationLevel: Int
-        child: Line?
-        contents: String
+ TODO:
+    1. Remove Keypath prefixes
+    2. Sort results
+    3. Remove "some" child
  */
-
-enum IndentationType: String {
-    case pipe = "|\t"
-    case tab = "/t"
+public enum Difference {
+    /// Styling of the diff indentation.
+    /// `pipe` example:
+    ///     address:
+    ///     |    street:
+    ///     |    |    Received: 2nd Street
+    ///     |    |    Expected: Times Square
+    ///     |    counter:
+    ///     |    |    counter:
+    ///     |    |    |    Received: 1
+    ///     |    |    |    Expected: 2
+    /// `tab` example:
+    ///     address:
+    ///         street:
+    ///             Received: 2nd Street
+    ///             Expected: Times Square
+    ///         counter:
+    ///             counter:
+    ///                 Received: 1
+    ///                 Expected: 2
+    public enum IndentationType: String {
+        case pipe = "|\t"
+        case tab = "\t"
+    }
 }
+
+private typealias IndentationType = Difference.IndentationType
 
 private struct Line {
     let contents: String
@@ -41,22 +62,103 @@ private struct Line {
     }
 }
 
-fileprivate func handleChildless<T>(
-    _ expected: T,
-    _ received: T,
-    _ indentationLevel: Int
-) -> [Line] {
+fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [Line] {
     let expectedMirror = Mirror(reflecting: expected)
     let receivedMirror = Mirror(reflecting: received)
 
+    guard expectedMirror.children.count != 0, receivedMirror.children.count != 0 else {
+        if String(dumping: received) != String(dumping: expected) {
+            return handleChildless(expected, expectedMirror, received, receivedMirror, level)
+        }
+        return []
+    }
+
+    let hasDiffNumOfChildren = expectedMirror.children.count != receivedMirror.children.count
+    switch (expectedMirror.displayStyle, receivedMirror.displayStyle) {
+    case (.collection?, .collection?) where hasDiffNumOfChildren,
+         (.dictionary?, .dictionary?) where hasDiffNumOfChildren,
+         (.set?, .set?) where hasDiffNumOfChildren,
+         (.enum?, .enum?) where hasDiffNumOfChildren:
+        return [generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, level)]
+    case (.dictionary?, .dictionary?):
+        if let expectedDict = expected as? Dictionary<AnyHashable, Any>,
+            let receivedDict = received as? Dictionary<AnyHashable, Any> {
+            var resultLines: [Line] = []
+            expectedDict.keys.forEach { key in
+                let results = diffLines(expectedDict[key], receivedDict[key], level: level + 1)
+                if !results.isEmpty {
+                    resultLines.append(Line(contents: "Key \(key.description):", indentationLevel: level, children: results))
+                }
+            }
+            return resultLines
+        }
+    case (.set?, .set?):
+        if let expectedSet = expected as? Set<AnyHashable>,
+            let receivedSet = received as? Set<AnyHashable> {
+            return expectedSet.subtracting(receivedSet)
+                .map { unique in
+                    Line(contents: "Missing: \(unique.description)", indentationLevel: level)
+                }
+        }
+    // Handles different enum cases that have children to prevent printing entire object
+    case (.enum?, .enum?) where expectedMirror.children.first?.label != receivedMirror.children.first?.label:
+        let expectedPrintable = expectedMirror.children.first?.label ?? "UNKNOWN"
+        let receivedPrintable = receivedMirror.children.first?.label ?? "UNKNOWN"
+        return generateExpectedReceiveLines(expectedPrintable, receivedPrintable, level)
+    default:
+        break
+    }
+
+    var resultLines = [Line]()
+    let zipped = zip(expectedMirror.children, receivedMirror.children)
+    zipped.enumerated().forEach { (index, zippedValues) in
+        let lhs = zippedValues.0
+        let rhs = zippedValues.1
+        let leftDump = String(dumping: lhs.value)
+        if leftDump != String(dumping: rhs.value) {
+            if Mirror(reflecting: lhs.value).displayStyle != nil {
+                let results = diffLines(lhs.value, rhs.value, level: level + 1)
+                if !results.isEmpty {
+                    let line = Line(contents: "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):",
+                        indentationLevel: level,
+                        children: results
+                    )
+                    resultLines.append(line)
+                }
+            } else {
+                let childName = "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):"
+                let children = generateExpectedReceiveLines(
+                    String(describing: lhs.value),
+                    String(describing: rhs.value),
+                    level + 1
+                )
+                resultLines.append(Line(contents: childName, indentationLevel: level, children: children))
+            }
+        }
+    }
+    return resultLines
+}
+
+fileprivate func handleChildless<T>(
+    _ expected: T,
+    _ expectedMirror: Mirror,
+    _ received: T,
+    _ receivedMirror: Mirror,
+    _ indentationLevel: Int
+) -> [Line] {
+    // Empty collections are "childless", so we may need to generate a different count block instead of treating as a
+    // childless enum.
     guard !expectedMirror.canBeEmpty else {
         return [generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, indentationLevel)]
     }
 
     let receivedPrintable: String
     let expectedPrintable: String
+    // Received mirror has a different number of arguments to expected
     if receivedMirror.children.count == 0, expectedMirror.children.count != 0 {
+        // Print whole description of received, as it's only a label if childless
         receivedPrintable = String(dumping: received)
+        // Get the label from the expected, to prevent printing long list of arguments
         expectedPrintable = enumLabelFromFirstChild(expectedMirror) ?? String(describing: expected)
     } else if expectedMirror.children.count == 0, receivedMirror.children.count != 0 {
         receivedPrintable = enumLabelFromFirstChild(receivedMirror) ?? String(describing: received)
@@ -84,103 +186,6 @@ private func generateDifferentCountBlock<T>(
     )
 }
 
-fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: (_ description: String) -> Void) {
-    let lines = diffLines(expected, received)
-    let linesContents = lines.map { line in
-        line.generateContents(indentationType: .pipe)
-    }
-    let isOnlyTopLevelFailure = lines.map { $0.hasChildren }.filter { $0 }.isEmpty
-    if isOnlyTopLevelFailure {
-        closure(linesContents.joined())
-    } else {
-        linesContents.forEach { lineContents in
-            closure(lineContents)
-        }
-    }
-}
-
-/// Compares 2 objects and iterates over their differences
-///
-/// - Parameters:
-///   - lhs: expected object
-///   - rhs: received object
-///   - closure: iteration closure
-fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [Line] {
-    let expectedMirror = Mirror(reflecting: expected)
-    let receivedMirror = Mirror(reflecting: received)
-
-    guard expectedMirror.children.count != 0, receivedMirror.children.count != 0 else {
-        if String(dumping: received) != String(dumping: expected) {
-            return handleChildless(expected, received, level)
-        }
-        return []
-    }
-
-    let hasDiffNumOfChildren = expectedMirror.children.count != receivedMirror.children.count
-    switch (expectedMirror.displayStyle, receivedMirror.displayStyle) {
-    case (.collection?, .collection?) where hasDiffNumOfChildren,
-         (.dictionary?, .dictionary?) where hasDiffNumOfChildren,
-         (.set?, .set?) where hasDiffNumOfChildren:
-        return [generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, level)]
-    case (.dictionary?, .dictionary?):
-        if let expectedDict = expected as? Dictionary<AnyHashable, Any>,
-            let receivedDict = received as? Dictionary<AnyHashable, Any> {
-            var resultLines: [Line] = []
-            expectedDict.keys.forEach { key in
-                let results = diffLines(expectedDict[key], receivedDict[key], level: level + 1)
-                if !results.isEmpty {
-                    resultLines.append(Line(contents: "Key \(key.description):", indentationLevel: level, children: results))
-                }
-            }
-            return resultLines
-        }
-
-    case (.set?, .set?):
-        if let expectedSet = expected as? Set<AnyHashable>,
-            let receivedSet = received as? Set<AnyHashable> {
-
-            return expectedSet.subtracting(receivedSet)
-                .map { unique in
-                    Line(contents: "Missing: \(unique.description)", indentationLevel: level)
-                }
-        }
-    case (.enum?, .enum) where hasDiffNumOfChildren:
-        return [generateDifferentCountBlock(expected, expectedMirror, received, receivedMirror, level)]
-    case (.enum?, .enum?) where expectedMirror.children.first?.label != receivedMirror.children.first?.label:
-        let expectedPrintable = expectedMirror.children.first?.label ?? "UNKNOWN"
-        let receivedPrintable = receivedMirror.children.first?.label ?? "UNKNOWN"
-        return generateExpectedReceiveLines(expectedPrintable, receivedPrintable, level)
-    default:
-        break
-    }
-
-    var resultLines = [Line]()
-    let zipped = zip(expectedMirror.children, receivedMirror.children)
-    zipped.enumerated().forEach { (index, zippedValues) in
-        let lhs = zippedValues.0
-        let rhs = zippedValues.1
-        let leftDump = String(dumping: lhs.value)
-        if leftDump != String(dumping: rhs.value) {
-            if Mirror(reflecting: lhs.value).displayStyle != nil {
-                let results = diffLines(lhs.value, rhs.value, level: level + 1)
-                if !results.isEmpty {
-                    let line = Line(contents: "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):",
-                        indentationLevel: level,
-                        children: results
-                    )
-                    resultLines.append(line)
-                }
-            } else {
-                let childName = "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):"
-                let children = generateExpectedReceiveLines(String(describing: lhs.value), String(describing: rhs.value), level + 1)
-                let line = Line(contents: childName, indentationLevel: level, children: children)
-                resultLines.append(line)
-            }
-        }
-    }
-    return resultLines
-}
-
 private func generateExpectedReceiveLines(
     _ expected: String,
     _ received: String,
@@ -199,12 +204,15 @@ fileprivate extension String {
         self = withoutDumpArtifacts
     }
 
+    // Removes the artifacts of using dumping initialiser to improve readability
     private var withoutDumpArtifacts: String {
         self.replacingOccurrences(of: "- ", with: "")
             .replacingOccurrences(of: "\n", with: "")
     }
 }
 
+// In the case of an enum with an argument being compared to a different enum case,
+// pull the case name from the mirror
 private func enumLabelFromFirstChild(_ mirror: Mirror) -> String? {
     switch mirror.displayStyle {
     case .enum: return mirror.children.first?.label
@@ -241,10 +249,19 @@ fileprivate extension Mirror {
 ///   - expected: Expected value
 ///   - received: Received value
 /// - Returns: List of differences
-public func diff<T>(_ expected: T, _ received: T) -> [String] {
-    var all = [String]()
-    diff(expected, received) { all.append($0) }
-    return all
+public func diff<T>(
+    _ expected: T,
+    _ received: T,
+    indentationType: Difference.IndentationType = .pipe
+) -> [String] {
+    let lines = diffLines(expected, received)
+    let linesContents = lines.map { line in line.generateContents(indentationType: indentationType) }
+    let isOnlyTopLevelFailure = lines.map { $0.hasChildren }.filter { $0 }.isEmpty
+    if isOnlyTopLevelFailure {
+        return [linesContents.joined()]
+    } else {
+        return linesContents
+    }
 }
 
 /// Prints list of differences between 2 objects
@@ -252,20 +269,29 @@ public func diff<T>(_ expected: T, _ received: T) -> [String] {
 /// - Parameters:
 ///   - expected: Expected value
 ///   - received: Received value
-public func dumpDiff<T: Equatable>(_ expected: T, _ received: T) {
+public func dumpDiff<T: Equatable>(
+    _ expected: T,
+    _ received: T,
+    indentationType: Difference.IndentationType = .pipe
+) {
     // skip equal
     guard expected != received else {
         return
     }
 
-    diff(expected, received).forEach { print($0) }
+    diff(expected, received, indentationType: indentationType).forEach { print($0) }
 }
+
 
 /// Prints list of differences between 2 objects
 ///
 /// - Parameters:
 ///   - expected: Expected value
 ///   - received: Received value
-public func dumpDiff<T>(_ expected: T, _ received: T) {
-    diff(expected, received).forEach { print($0) }
+public func dumpDiff<T>(
+    _ expected: T,
+    _ received: T,
+    indentationType: Difference.IndentationType = .pipe
+) {
+    diff(expected, received, indentationType: indentationType).forEach { print($0) }
 }
