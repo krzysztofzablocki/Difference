@@ -74,7 +74,7 @@ fileprivate func diff<T>(_ expected: T, _ received: T, level: Int = 0, closure: 
                     results.append(diff)
                 }
                 if !results.isEmpty {
-                    let header = "\(indentation(level: level))Child key \(key.description):\n"
+                    let header = "\(indentation(level: level))Key \(key.description):\n"
                     closure(header + results.joined())
                 }
             }
