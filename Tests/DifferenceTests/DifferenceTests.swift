@@ -108,7 +108,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "address:\n|\tstreet:\n|\t|\tReceived: 2nd Street\n|\t|\tExpected: Times Square\n|\tcounter:\n|\t|\tcounter:\n|\t|\t|\tReceived: 1\n|\t|\t|\tExpected: 2\n")
+        XCTAssertEqual(results.first, "address:\n|\tcounter:\n|\t|\tcounter:\n|\t|\t|\tReceived: 1\n|\t|\t|\tExpected: 2\n|\tstreet:\n|\t|\tReceived: 2nd Street\n|\t|\tExpected: Times Square\n")
 
     }
 
@@ -188,18 +188,12 @@ class DifferenceTests: XCTestCase {
     }
 
     func test_canFindOptionalDifferenceBetweenSomeAndNone() {
-        let truth = Person(petAges: ["Henny": 4, "Jethro": 6])
+        let truth = Person(petAges: ["Henny": 4])
         let stub = Person(petAges: nil)
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        let header = "petAges:\n|\tReceived: nil\n|\tExpected: Optional(["
-        let hennyDiff = "\"Henny\": 4"
-        let jethroDiff = "\"Jethro\": 6"
-        let endingDiff = "])\n"
-        let firstPermutation = header + hennyDiff + ", " + jethroDiff + endingDiff
-        let secondPermutation = header + jethroDiff + ", " + hennyDiff + endingDiff
-        XCTAssertTrue(assertEither(expected: (firstPermutation, secondPermutation), received: results.first))
+        XCTAssertEqual(results.first, "petAges:\n|\tReceived: nil\n|\tExpected: Optional([\"Henny\": 4])\n")
     }
 
     func test_canFindDictionaryDifference() {
@@ -211,9 +205,8 @@ class DifferenceTests: XCTestCase {
         let header = "petAges:\n|\tsome:\n"
         let jethroDiff = "|\t|\tKey Jethro:\n|\t|\t|\tsome:\n|\t|\t|\t|\tReceived: 2\n|\t|\t|\t|\tExpected: 6\n"
         let hennyDiff = "|\t|\tKey Henny:\n|\t|\t|\tsome:\n|\t|\t|\t|\tReceived: 1\n|\t|\t|\t|\tExpected: 4\n"
-        let firstPermutation = header + jethroDiff + hennyDiff
         let secondPermutation = header + hennyDiff + jethroDiff
-        XCTAssertTrue(assertEither(expected: (firstPermutation, secondPermutation), received: results.first))
+        XCTAssertEqual(results.first, secondPermutation)
     }
 
     // MARK: Sets
@@ -242,24 +235,6 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        let header = "favoriteFoods:\n|\tsome:\n"
-        let sushiDiff = "|\t|\tMissing: Sushi\n"
-        let pizzaDiff = "|\t|\tMissing: Pizza\n"
-        let firstPermutation = header + sushiDiff + pizzaDiff
-        let secondPermutation = header + pizzaDiff + sushiDiff
-        XCTAssertTrue(assertEither(expected: (firstPermutation, secondPermutation), received: results.first))
-    }
-}
-
-private func assertEither<T: Equatable>(
-    expected: (T, T),
-    received: T
-) -> Bool {
-    if expected.0 == received {
-        return true
-    } else if expected.1 == received {
-        return true
-    } else {
-        return false
+        XCTAssertEqual(results.first, "favoriteFoods:\n|\tsome:\n|\t|\tMissing: Pizza\n|\t|\tMissing: Sushi\n")
     }
 }

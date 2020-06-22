@@ -35,7 +35,7 @@ fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [
             expectedDict.keys.forEach { key in
                 let results = diffLines(expectedDict[key], receivedDict[key], level: level + 1)
                 if !results.isEmpty {
-                    resultLines.append(Line(contents: "Key \(key.description):", indentationLevel: level, children: results))
+                    resultLines.append(Line(contents: "Key \(key.description):", indentationLevel: level, canBeOrdered: true, children: results))
                 }
             }
             return resultLines
@@ -45,13 +45,13 @@ fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [
             let receivedSet = received as? Set<AnyHashable> {
             return expectedSet.subtracting(receivedSet)
                 .map { unique in
-                    Line(contents: "Missing: \(unique.description)", indentationLevel: level)
+                    Line(contents: "Missing: \(unique.description)", indentationLevel: level, canBeOrdered: true)
                 }
         }
     // Handles different enum cases that have children to prevent printing entire object
     case (.enum?, .enum?) where expectedMirror.children.first?.label != receivedMirror.children.first?.label:
-        let expectedPrintable = expectedMirror.children.first?.label ?? "UNKNOWN"
-        let receivedPrintable = receivedMirror.children.first?.label ?? "UNKNOWN"
+        let expectedPrintable = enumLabelFromFirstChild(expectedMirror) ?? "UNKNOWN"
+        let receivedPrintable = enumLabelFromFirstChild(receivedMirror) ?? "UNKNOWN"
         return generateExpectedReceiveLines(expectedPrintable, receivedPrintable, level)
     default:
         break
@@ -69,6 +69,7 @@ fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [
                 if !results.isEmpty {
                     let line = Line(contents: "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):",
                         indentationLevel: level,
+                        canBeOrdered: true,
                         children: results
                     )
                     resultLines.append(line)
@@ -80,7 +81,7 @@ fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [
                     String(describing: rhs.value),
                     level + 1
                 )
-                resultLines.append(Line(contents: childName, indentationLevel: level, children: children))
+                resultLines.append(Line(contents: childName, indentationLevel: level, canBeOrdered: true, children: children))
             }
         }
     }
@@ -117,22 +118,30 @@ private struct Line {
     let contents: String
     let indentationLevel: Int
     let children: [Line]
+    let canBeOrdered: Bool
 
     var hasChildren: Bool { !children.isEmpty }
 
     init(
         contents: String,
         indentationLevel: Int,
+        canBeOrdered: Bool,
         children: [Line] = []
     ) {
         self.contents = contents
         self.indentationLevel = indentationLevel
         self.children = children
+        self.canBeOrdered = canBeOrdered
     }
 
     func generateContents(indentationType: IndentationType) -> String {
         let indentationString = indentation(level: indentationLevel, indentationType: indentationType)
-        let childrenContents = children.map { $0.generateContents(indentationType: indentationType)}
+        let childrenContents = children
+            .sorted { lhs, rhs in
+                guard lhs.canBeOrdered && rhs.canBeOrdered else { return false }
+                return lhs.contents < rhs.contents
+            }
+            .map { $0.generateContents(indentationType: indentationType)}
             .joined()
         return "\(indentationString)\(contents)\n" + childrenContents
     }
@@ -185,6 +194,7 @@ private func generateDifferentCountBlock<T>(
     return Line(
         contents: "Different count:",
         indentationLevel: indentationLevel,
+        canBeOrdered: false,
         children: generateExpectedReceiveLines(expectedPrintable, receivedPrintable, indentationLevel + 1)
     )
 }
@@ -195,8 +205,8 @@ private func generateExpectedReceiveLines(
     _ indentationLevel: Int
 ) -> [Line] {
     return [
-        Line(contents: "Received: \(received)", indentationLevel: indentationLevel),
-        Line(contents: "Expected: \(expected)", indentationLevel: indentationLevel)
+        Line(contents: "Received: \(received)", indentationLevel: indentationLevel, canBeOrdered: false),
+        Line(contents: "Expected: \(expected)", indentationLevel: indentationLevel, canBeOrdered: false)
     ]
 }
 
@@ -259,6 +269,8 @@ public func diff<T>(
 ) -> [String] {
     let lines = diffLines(expected, received)
     let linesContents = lines.map { line in line.generateContents(indentationType: indentationType) }
+    // In the case of this being a top level failure (e.g. both mirrors have no children, like comparing two
+    // primitives `diff(2,3)`, we only want to produce one failure to have proper spacing.
     let isOnlyTopLevelFailure = lines.map { $0.hasChildren }.filter { $0 }.isEmpty
     if isOnlyTopLevelFailure {
         return [linesContents.joined()]
