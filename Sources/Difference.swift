@@ -64,6 +64,12 @@ fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [
         let rhs = zippedValues.1
         let leftDump = String(dumping: lhs.value)
         if leftDump != String(dumping: rhs.value) {
+            // Remove embedding of `some` for optional types, as it offers no value
+            guard expectedMirror.displayStyle != .optional else {
+                let results = diffLines(lhs.value, rhs.value, level: level)
+                resultLines.append(contentsOf: results)
+                return
+            }
             if Mirror(reflecting: lhs.value).displayStyle != nil {
                 let results = diffLines(lhs.value, rhs.value, level: level + 1)
                 if !results.isEmpty {
