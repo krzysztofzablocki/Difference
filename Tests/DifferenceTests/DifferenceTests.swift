@@ -201,11 +201,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        let header = "petAges:\n|\tsome:\n"
-        let jethroDiff = "|\t|\tKey Jethro:\n|\t|\t|\tsome:\n|\t|\t|\t|\tReceived: 2\n|\t|\t|\t|\tExpected: 6\n"
-        let hennyDiff = "|\t|\tKey Henny:\n|\t|\t|\tsome:\n|\t|\t|\t|\tReceived: 1\n|\t|\t|\t|\tExpected: 4\n"
-        let secondPermutation = header + hennyDiff + jethroDiff
-        XCTAssertEqual(results.first, secondPermutation)
+        XCTAssertEqual(results.first, "petAges:\n|\tsome:\n|\t|\tKey Henny:\n|\t|\t|\tsome:\n|\t|\t|\t|\tReceived: 1\n|\t|\t|\t|\tExpected: 4\n|\t|\tKey Jethro:\n|\t|\t|\tsome:\n|\t|\t|\t|\tReceived: 2\n|\t|\t|\t|\tExpected: 6\n")
     }
 
     // MARK: Sets
