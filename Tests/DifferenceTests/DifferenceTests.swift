@@ -183,7 +183,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "petAges:\n|\tsome:\n|\t|\tDifferent count:\n|\t|\t|\tReceived: (0) [:]\n|\t|\t|\tExpected: (1) [\"Henny\": 4]\n")
+        XCTAssertEqual(results.first, "petAges:\n|\tDifferent count:\n|\t|\tReceived: (0) [:]\n|\t|\tExpected: (1) [\"Henny\": 4]\n")
     }
 
     func test_canFindOptionalDifferenceBetweenSomeAndNone() {
@@ -201,11 +201,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        let header = "petAges:\n|\tsome:\n"
-        let jethroDiff = "|\t|\tKey Jethro:\n|\t|\t|\tsome:\n|\t|\t|\t|\tReceived: 2\n|\t|\t|\t|\tExpected: 6\n"
-        let hennyDiff = "|\t|\tKey Henny:\n|\t|\t|\tsome:\n|\t|\t|\t|\tReceived: 1\n|\t|\t|\t|\tExpected: 4\n"
-        let secondPermutation = header + hennyDiff + jethroDiff
-        XCTAssertEqual(results.first, secondPermutation)
+        XCTAssertEqual(results.first, "petAges:\n|\tKey Henny:\n|\t|\tReceived: 1\n|\t|\tExpected: 4\n|\tKey Jethro:\n|\t|\tReceived: 2\n|\t|\tExpected: 6\n")
     }
 
     // MARK: Sets
@@ -216,7 +212,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "favoriteFoods:\n|\tsome:\n|\t|\tDifferent count:\n|\t|\t|\tReceived: (1) [\"Oysters\"]\n|\t|\t|\tExpected: (0) []\n")
+        XCTAssertEqual(results.first, "favoriteFoods:\n|\tDifferent count:\n|\t|\tReceived: (1) [\"Oysters\"]\n|\t|\tExpected: (0) []\n")
     }
 
     func test_canFindOptionalSetDifferenceBetweenSomeAndNone() {
@@ -234,7 +230,7 @@ class DifferenceTests: XCTestCase {
         let results = diff(truth, stub)
 
         XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "favoriteFoods:\n|\tsome:\n|\t|\tMissing: Pizza\n|\t|\tMissing: Sushi\n")
+        XCTAssertEqual(results.first, "favoriteFoods:\n|\tMissing: Pizza\n|\tMissing: Sushi\n")
     }
 }
 
