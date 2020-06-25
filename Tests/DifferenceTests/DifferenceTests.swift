@@ -10,6 +10,8 @@ import Foundation
 import XCTest
 import Difference
 
+typealias IndentationType = Difference.IndentationType
+
 fileprivate struct Person: Equatable {
     let name: String
     let age: Int
@@ -74,163 +76,187 @@ private enum State {
     case loadedWithNoArguments
 }
 
-class DifferenceTests: XCTestCase {
-    func testCanFindRootPrimitiveDifference() {
-        let results = diff(2, 3)
+extension String {
+    func adjustingFor(indentationType: IndentationType) -> String {
+        switch indentationType {
+        case .pipe:
+            return self
+        case .tab:
+            return self.replacingOccurrences(of: "|", with: "")
+        }
+    }
+}
 
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "Received: 3\nExpected: 2\n")
+class DifferenceTests: XCTestCase {
+
+    private func runTest<T>(
+        expected: T,
+        received: T,
+        expectedResults: [String],
+        skipPrintingOnDiffCount: Bool = false
+    ) {
+        IndentationType.allCases.forEach { indentationType in
+            let results = diff(expected, received, indentationType: indentationType, skipPrintingOnDiffCount: skipPrintingOnDiffCount)
+            let preppedExpected = expectedResults.map { $0.adjustingFor(indentationType: indentationType) }
+            XCTAssertEqual(results.count, expectedResults.count)
+            XCTAssertEqual(results, preppedExpected)
+        }
+    }
+
+    func testCanFindRootPrimitiveDifference() {
+        runTest(
+            expected: 2,
+            received: 3,
+            expectedResults: ["Received: 3\nExpected: 2\n"]
+        )
     }
 
     fileprivate let truth = Person()
 
     func testCanFindPrimitiveDifference() {
-        let stub = Person(age: 30)
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "age:\n|\tReceived: 30\n|\tExpected: 29\n")
-
+        runTest(
+            expected: truth,
+            received: Person(age: 30),
+            expectedResults: ["age:\n|\tReceived: 30\n|\tExpected: 29\n"]
+        )
     }
 
     func testCanFindMultipleDifference() {
-        let stub = Person(name: "Adam", age: 30)
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 2)
-        XCTAssertEqual(results.first, "name:\n|\tReceived: Adam\n|\tExpected: Krzysztof\n")
-        XCTAssertEqual(results.last, "age:\n|\tReceived: 30\n|\tExpected: 29\n")
+        runTest(
+            expected: truth,
+            received: Person(name: "Adam", age: 30),
+            expectedResults: [
+                "name:\n|\tReceived: Adam\n|\tExpected: Krzysztof\n",
+                "age:\n|\tReceived: 30\n|\tExpected: 29\n"
+            ]
+        )
     }
 
     func testCanFindComplexDifference() {
-        let stub = Person(address: Person.Address(street: "2nd Street", counter: .init(counter: 1)))
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "address:\n|\tcounter:\n|\t|\tcounter:\n|\t|\t|\tReceived: 1\n|\t|\t|\tExpected: 2\n|\tstreet:\n|\t|\tReceived: 2nd Street\n|\t|\tExpected: Times Square\n")
-
+        runTest(
+            expected: truth,
+            received: Person(address: Person.Address(street: "2nd Street", counter: .init(counter: 1))),
+            expectedResults: ["address:\n|\tcounter:\n|\t|\tcounter:\n|\t|\t|\tReceived: 1\n|\t|\t|\tExpected: 2\n|\tstreet:\n|\t|\tReceived: 2nd Street\n|\t|\tExpected: Times Square\n"]
+        )
     }
 
     func testCanGiveDescriptionForOptionalOnLeftSide() {
-        let truth = Person(pet: nil)
-        let stub = Person()
-        let results = diff(truth, stub)
-
+        let results = diff(Person(pet: nil), Person())
         XCTAssertEqual(results.count, 1)
     }
 
     func testCanGiveDescriptionForOptionalOnRightSide() {
-        let truth = Person()
-        let stub = Person(pet: nil)
-        let results = diff(truth, stub)
-
+        let results = diff(Person(), Person(pet: nil))
         XCTAssertEqual(results.count, 1)
     }
 
     // MARK: Collections
 
     func test_canFindCollectionCountDifference() {
-        let results = diff([1], [1, 3])
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "Different count:\n|\tReceived: (2) [1, 3]\n|\tExpected: (1) [1]\n")
+        runTest(
+            expected: [1],
+            received: [1, 3],
+            expectedResults: ["Different count:\n|\tReceived: (2) [1, 3]\n|\tExpected: (1) [1]\n"]
+        )
     }
 
     func test_canFindCollectionCountDifference_complex() {
-        let truth = State.loaded([1, 2], "truthString")
-        let stub = State.loaded([], "stubString")
-        let results = diff(truth, stub)
+        runTest(
+            expected: State.loaded([1, 2], "truthString"),
+            received: State.loaded([], "stubString"),
+            expectedResults: ["Enum loaded:\n|\t.0:\n|\t|\tDifferent count:\n|\t|\t|\tReceived: (0) []\n|\t|\t|\tExpected: (2) [1, 2]\n|\t.1:\n|\t|\tReceived: stubString\n|\t|\tExpected: truthString\n"]
+        )
+    }
 
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "Enum loaded:\n|\t.0:\n|\t|\tDifferent count:\n|\t|\t|\tReceived: (0) []\n|\t|\t|\tExpected: (2) [1, 2]\n|\t.1:\n|\t|\tReceived: stubString\n|\t|\tExpected: truthString\n")
+    func test_collectionCountDifference_withoutPrintingObject() {
+        dumpDiff([1], [1, 3], indentationType: .pipe, skipPrintingOnDiffCount: true)
+        runTest(
+            expected: [1],
+            received: [1, 3],
+            expectedResults: ["Different count:\n|\tReceived: (2)\n|\tExpected: (1)\n"],
+            skipPrintingOnDiffCount: true
+        )
     }
 
     func test_labelsArrayElementsInDiff() {
-        let truth = [Person(), Person(name: "John")]
-        let stub = [Person(name: "John"), Person()]
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 2)
-        XCTAssertEqual(results.first, "Collection[0]:\n|\tname:\n|\t|\tReceived: John\n|\t|\tExpected: Krzysztof\n")
-        XCTAssertEqual(results.last, "Collection[1]:\n|\tname:\n|\t|\tReceived: Krzysztof\n|\t|\tExpected: John\n")
+        runTest(
+            expected: [Person(), Person(name: "John")],
+            received: [Person(name: "John"), Person()],
+            expectedResults: [
+                "Collection[0]:\n|\tname:\n|\t|\tReceived: John\n|\t|\tExpected: Krzysztof\n",
+                "Collection[1]:\n|\tname:\n|\t|\tReceived: Krzysztof\n|\t|\tExpected: John\n"
+            ]
+        )
     }
 
     // MARK: Enums
 
     func test_canFindEnumCaseDifferenceWhenAssociatedValuesAreIdentical() {
-        let truth = State.loaded([0], "CommonString")
-        let stub = State.anotherLoaded([0], "CommonString")
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "Received: anotherLoaded\nExpected: loaded\n")
+        runTest(
+            expected: State.loaded([0], "CommonString"),
+            received: State.anotherLoaded([0], "CommonString"),
+            expectedResults: ["Received: anotherLoaded\nExpected: loaded\n"]
+        )
     }
 
     func test_canFindEnumCaseDifferenceWhenLessArguments() {
-        let truth = State.loaded([0], "CommonString")
-        let stub = State.loadedWithDiffArguments(1)
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "Received: loadedWithDiffArguments\nExpected: loaded\n")
+        runTest(
+            expected: State.loaded([0], "CommonString"),
+            received: State.loadedWithDiffArguments(1),
+            expectedResults: ["Received: loadedWithDiffArguments\nExpected: loaded\n"]
+        )
     }
 
     // MARK: Dictionaries
 
     func test_canFindDictionaryCountDifference() {
-        let truth = Person(petAges: ["Henny": 4])
-        let stub = Person(petAges: [:])
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "petAges:\n|\tDifferent count:\n|\t|\tReceived: (0) [:]\n|\t|\tExpected: (1) [\"Henny\": 4]\n")
+        runTest(
+            expected: Person(petAges: ["Henny": 4]),
+            received: Person(petAges: [:]),
+            expectedResults: ["petAges:\n|\tDifferent count:\n|\t|\tReceived: (0) [:]\n|\t|\tExpected: (1) [\"Henny\": 4]\n"]
+        )
     }
 
     func test_canFindOptionalDifferenceBetweenSomeAndNone() {
-        let truth = Person(petAges: ["Henny": 4])
-        let stub = Person(petAges: nil)
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "petAges:\n|\tReceived: nil\n|\tExpected: Optional([\"Henny\": 4])\n")
+        runTest(
+            expected: Person(petAges: ["Henny": 4]),
+            received: Person(petAges: nil),
+            expectedResults: ["petAges:\n|\tReceived: nil\n|\tExpected: Optional([\"Henny\": 4])\n"]
+        )
     }
 
     func test_canFindDictionaryDifference() {
-        let truth = Person(petAges: ["Henny": 4, "Jethro": 6])
-        let stub = Person(petAges: ["Henny": 1, "Jethro": 2])
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "petAges:\n|\tKey Henny:\n|\t|\tReceived: 1\n|\t|\tExpected: 4\n|\tKey Jethro:\n|\t|\tReceived: 2\n|\t|\tExpected: 6\n")
+        runTest(
+            expected: Person(petAges: ["Henny": 4, "Jethro": 6]),
+            received: Person(petAges: ["Henny": 1, "Jethro": 2]),
+            expectedResults: ["petAges:\n|\tKey Henny:\n|\t|\tReceived: 1\n|\t|\tExpected: 4\n|\tKey Jethro:\n|\t|\tReceived: 2\n|\t|\tExpected: 6\n"]
+        )
     }
 
     // MARK: Sets
 
     func test_canFindSetCountDifference() {
-        let truth = Person(favoriteFoods: [])
-        let stub = Person(favoriteFoods: ["Oysters"])
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "favoriteFoods:\n|\tDifferent count:\n|\t|\tReceived: (1) [\"Oysters\"]\n|\t|\tExpected: (0) []\n")
+        runTest(
+            expected: Person(favoriteFoods: []),
+            received: Person(favoriteFoods: ["Oysters"]),
+            expectedResults: ["favoriteFoods:\n|\tDifferent count:\n|\t|\tReceived: (1) [\"Oysters\"]\n|\t|\tExpected: (0) []\n"]
+        )
     }
 
     func test_canFindOptionalSetDifferenceBetweenSomeAndNone() {
-        let truth = Person(favoriteFoods: ["Oysters"])
-        let stub = Person(favoriteFoods: nil)
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "favoriteFoods:\n|\tReceived: nil\n|\tExpected: Optional(Set([\"Oysters\"]))\n")
+        runTest(
+            expected: Person(favoriteFoods: ["Oysters"]),
+            received: Person(favoriteFoods: nil),
+            expectedResults: ["favoriteFoods:\n|\tReceived: nil\n|\tExpected: Optional(Set([\"Oysters\"]))\n"]
+        )
     }
 
     func test_canFindSetDifference() {
-        let truth = Person(favoriteFoods: ["Sushi", "Pizza"])
-        let stub = Person(favoriteFoods: ["Oysters", "Crab"])
-        let results = diff(truth, stub)
-
-        XCTAssertEqual(results.count, 1)
-        XCTAssertEqual(results.first, "favoriteFoods:\n|\tMissing: Pizza\n|\tMissing: Sushi\n")
+        runTest(
+            expected: Person(favoriteFoods: ["Sushi", "Pizza"]),
+            received: Person(favoriteFoods: ["Oysters", "Crab"]),
+            expectedResults: ["favoriteFoods:\n|\tMissing: Pizza\n|\tMissing: Sushi\n"]
+        )
     }
 }
 
