@@ -1,4 +1,3 @@
-[![CircleCI](https://circleci.com/gh/krzysztofzablocki/Difference.svg?style=shield)](https://circleci.com/gh/krzysztofzablocki/Difference)
 [![Version](https://img.shields.io/cocoapods/v/Difference.svg?style=flat)](http://cocoapods.org/pods/Difference)
 [![License](https://img.shields.io/cocoapods/l/Difference.svg?style=flat)](http://cocoapods.org/pods/Difference)
 [![Platform](https://img.shields.io/cocoapods/p/Difference.svg?style=flat)](http://cocoapods.org/pods/Difference)
