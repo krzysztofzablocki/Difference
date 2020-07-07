@@ -1,11 +1,11 @@
 machine:
   xcode:
-    version: 9.0
+    version: 11.5
   environment:
     XCODE_SCHEME: Difference
     XCODE_PROJECT: Difference.xcodeproj
   post:
-      - ln -s /Applications/Xcode-9.0.app /Applications/Xcode.app
+      - ln -s /Applications/Xcode-11.5.app /Applications/Xcode.app
 
 test:
   override:
