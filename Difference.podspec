@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "Difference"
-  s.version      = "0.4"
+  s.version      = "0.5"
   s.summary      = "Better way to identify whats different between 2 instances."
   s.description  = <<-DESC
     Better way to identify whats different between 2 instances. Based on Mirror API.
@@ -15,5 +15,5 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/krzysztofzablocki/Difference.git", :tag => s.version.to_s }
   s.source_files  = "Sources/**/*"
   s.frameworks  = "Foundation"
-  s.swift_version = '4.2'
+  s.swift_version = '5.0'
 end
