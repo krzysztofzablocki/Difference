@@ -49,21 +49,43 @@ private struct Differ {
             if let expectedDict = expected as? Dictionary<AnyHashable, Any>,
                 let receivedDict = received as? Dictionary<AnyHashable, Any> {
                 var resultLines: [Line] = []
-                expectedDict.keys.forEach { key in
+                let missingKeys = Set(expectedDict.keys).subtracting(receivedDict.keys)
+                let extraKeys = Set(receivedDict.keys).subtracting(expectedDict.keys)
+                let commonKeys = Set(receivedDict.keys).intersection(expectedDict.keys)
+                commonKeys.forEach { key in
                     let results = diffLines(expectedDict[key], receivedDict[key], level: level + 1)
                     if !results.isEmpty {
                         resultLines.append(Line(contents: "Key \(key.description):", indentationLevel: level, canBeOrdered: true, children: results))
                     }
+                }
+                if (!missingKeys.isEmpty) {
+                    var missingKeyPairs: [Line] = []
+                    missingKeys.forEach { key in
+                        missingKeyPairs.append(Line(contents: "\(key.description): \(String(describing: expectedDict[key]))", indentationLevel: level + 1, canBeOrdered: true))
+                    }
+                    resultLines.append(Line(contents: "Missing key pairs:", indentationLevel: level, canBeOrdered: false, children: missingKeyPairs))
+                }
+                if (!extraKeys.isEmpty) {
+                    var extraKeyPairs: [Line] = []
+                    extraKeys.forEach { key in
+                        extraKeyPairs.append(Line(contents: "\(key.description): \(String(describing: receivedDict[key]))", indentationLevel: level + 1, canBeOrdered: true))
+                    }
+                    resultLines.append(Line(contents: "Extra key pairs:", indentationLevel: level, canBeOrdered: false, children: extraKeyPairs))
                 }
                 return resultLines
             }
         case (.set?, .set?):
             if let expectedSet = expected as? Set<AnyHashable>,
                 let receivedSet = received as? Set<AnyHashable> {
-                return expectedSet.subtracting(receivedSet)
+                let missing = expectedSet.subtracting(receivedSet)
                     .map { unique in
                         Line(contents: "Missing: \(unique.description)", indentationLevel: level, canBeOrdered: true)
                     }
+                let extras = receivedSet.subtracting(expectedSet)
+                    .map { unique in
+                        Line(contents: "Extra: \(unique.description)", indentationLevel: level, canBeOrdered: true)
+                    }
+                return missing + extras
             }
         // Handles different enum cases that have children to prevent printing entire object
         case (.enum?, .enum?) where expectedMirror.children.first?.label != receivedMirror.children.first?.label:
