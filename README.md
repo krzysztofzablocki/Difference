@@ -31,24 +31,31 @@ Add `.package(name: "Difference", url: "https://github.com/krzysztofzablocki/Dif
 
 ## Using lldb
 
-Just write the following to see the difference between 2 instances:
+Write the following to see the difference between 2 instances:
 
 `po dumpDiff(expected, received)`
 
 
 ## Integrate with XCTest
-Just add this to your test target:
+Add this to your test target:
 
 ```swift
-public func XCTAssertEqual<T: Equatable>(_ expected: T, _ received: T, file: StaticString = #file, line: UInt = #line) {
-    XCTAssertTrue(expected == received, "Found difference for \n" + diff(expected, received).joined(separator: ", "), file: file, line: line)
+public func XCTAssertEqual<T: Equatable>(_ expected: @autoclosure () throws -> T, _ received: @autoclosure () throws -> T, file: StaticString = #filePath, line: UInt = #line) {
+    do {
+        let expected = try expected()
+        let received = try received()
+        XCTAssertTrue(expected == received, "Found difference for \n" + diff(expected, received).joined(separator: ", "), file: file, line: line)
+    }
+    catch {
+        XCTFail("Caught error while testing: \(error)", file: file, line: line)
+    }
 }
 ```
 
-Replace `#file` with `#filePath` if you're using Xcode 12+.
+Replace `#filePath` with `#file` if you're using Xcode 11 or earlier.
 
 ## Integrate with Quick
-Just add this to your test target:
+Add this to your test target:
 
 ```swift
 public func equalDiff<T: Equatable>(_ expectedValue: T?) -> Predicate<T> {
