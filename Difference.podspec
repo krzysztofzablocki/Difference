@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "Difference"
-  s.version      = "0.5"
+  s.version      = "0.6.0"
   s.summary      = "Better way to identify whats different between 2 instances."
   s.description  = <<-DESC
     Better way to identify whats different between 2 instances. Based on Mirror API.
