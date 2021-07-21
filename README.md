@@ -77,3 +77,28 @@ public func equalDiff<T: Equatable>(_ expectedValue: T?) -> Predicate<T> {
     }
 }
 ```
+
+## Integrate with The Composable Architecture
+
+If you are using The Composable Architecture `nameLabels` configuration to get a diff that's more appropiate for reducer instrumentation
+
+```swift
+diff(oldState, newState, indentationType: .pipe, nameLabels: .comparing)
+```
+
+You can use this function in your own variant of [ReducerInstrumentation code based on this](https://github.com/pointfreeco/swift-composable-architecture/blob/e7dda73c35f1016c8ba82fd2b7c43757cce68e58/Sources/ComposableArchitecture/Debugging/ReducerDebugging.swift)
+
+That way your diffs will look more like this:
+
+```swift
+Received action:
+  AppAction.home(.howTo(.setSelectedSlide))
+State:
+home:
+|	selectedHowTo:
+|	|	selectedSlide:
+|	|	|	Current: 8mnkni91h4fe
+|	|	|	Previous: exei4wpqsmdk
+```
+
+
