@@ -10,16 +10,52 @@ import Foundation
 
 private typealias IndentationType = Difference.IndentationType
 
+public struct DifferenceNameLabels {
+    let expected: String
+    let received: String
+    let missing: String
+    let extra: String
+
+    public init(expected: String, received: String, missing: String, extra: String) {
+        self.expected = expected
+        self.received = received
+        self.missing = missing
+        self.extra = extra
+    }
+
+    public static var expectation: Self {
+        Self(
+            expected: "Expected",
+            received: "Received",
+            missing: "Missing",
+            extra: "Extra"
+        )
+    }
+
+    public static var comparing: Self {
+        Self(
+            expected: "Previous",
+            received: "Current",
+            missing: "Removed",
+            extra: "Added"
+        )
+    }
+}
+
+
 private struct Differ {
     private let indentationType: IndentationType
     private let skipPrintingOnDiffCount: Bool
+    private let nameLabels: DifferenceNameLabels
 
     init(
         indentationType: IndentationType,
-        skipPrintingOnDiffCount: Bool
+        skipPrintingOnDiffCount: Bool,
+        nameLabels: DifferenceNameLabels
     ) {
         self.indentationType = indentationType
         self.skipPrintingOnDiffCount = skipPrintingOnDiffCount
+        self.nameLabels = nameLabels
     }
 
     func diff<T>(_ expected: T, _ received: T) -> [String] {
@@ -63,14 +99,14 @@ private struct Differ {
                     missingKeys.forEach { key in
                         missingKeyPairs.append(Line(contents: "\(key.description): \(String(describing: expectedDict[key]))", indentationLevel: level + 1, canBeOrdered: true))
                     }
-                    resultLines.append(Line(contents: "Missing key pairs:", indentationLevel: level, canBeOrdered: false, children: missingKeyPairs))
+                    resultLines.append(Line(contents: "\(nameLabels.missing) key pairs:", indentationLevel: level, canBeOrdered: false, children: missingKeyPairs))
                 }
                 if (!extraKeys.isEmpty) {
                     var extraKeyPairs: [Line] = []
                     extraKeys.forEach { key in
                         extraKeyPairs.append(Line(contents: "\(key.description): \(String(describing: receivedDict[key]))", indentationLevel: level + 1, canBeOrdered: true))
                     }
-                    resultLines.append(Line(contents: "Extra key pairs:", indentationLevel: level, canBeOrdered: false, children: extraKeyPairs))
+                    resultLines.append(Line(contents: "\(nameLabels.extra) key pairs:", indentationLevel: level, canBeOrdered: false, children: extraKeyPairs))
                 }
                 return resultLines
             }
@@ -79,11 +115,11 @@ private struct Differ {
                 let receivedSet = received as? Set<AnyHashable> {
                 let missing = expectedSet.subtracting(receivedSet)
                     .map { unique in
-                        Line(contents: "Missing: \(unique.description)", indentationLevel: level, canBeOrdered: true)
+                        Line(contents: "\(nameLabels.missing): \(unique.description)", indentationLevel: level, canBeOrdered: true)
                     }
                 let extras = receivedSet.subtracting(expectedSet)
                     .map { unique in
-                        Line(contents: "Extra: \(unique.description)", indentationLevel: level, canBeOrdered: true)
+                        Line(contents: "\(nameLabels.extra): \(unique.description)", indentationLevel: level, canBeOrdered: true)
                     }
                 return missing + extras
             }
@@ -192,8 +228,8 @@ private struct Differ {
         _ indentationLevel: Int
     ) -> [Line] {
         return [
-            Line(contents: "Received: \(received)", indentationLevel: indentationLevel, canBeOrdered: false),
-            Line(contents: "Expected: \(expected)", indentationLevel: indentationLevel, canBeOrdered: false)
+            Line(contents: "\(nameLabels.received): \(received)", indentationLevel: indentationLevel, canBeOrdered: false),
+            Line(contents: "\(nameLabels.expected): \(expected)", indentationLevel: indentationLevel, canBeOrdered: false)
         ]
     }
 
@@ -332,9 +368,10 @@ public func diff<T>(
     _ expected: T,
     _ received: T,
     indentationType: Difference.IndentationType = .pipe,
-    skipPrintingOnDiffCount: Bool = false
+    skipPrintingOnDiffCount: Bool = false,
+    nameLabels: DifferenceNameLabels = .expectation
 ) -> [String] {
-    Differ(indentationType: indentationType, skipPrintingOnDiffCount: skipPrintingOnDiffCount)
+    Differ(indentationType: indentationType, skipPrintingOnDiffCount: skipPrintingOnDiffCount, nameLabels: nameLabels)
         .diff(expected, received)
 }
 
