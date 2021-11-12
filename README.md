@@ -11,7 +11,7 @@ Usually they use equality asserts, e.g. `XCTAssertEqual`, what happens if the ob
 
 ![](Resources/before.png)
 
-This forces you to manually scan the text and try to figure out exactly whats wrong, what if instead you could just learn which property is different?
+This forces you to manually scan the text and try to figure out exactly what's wrong, what if instead you could just learn which property is different?
 
 ![](Resources/after.png)
 
