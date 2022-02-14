@@ -65,7 +65,7 @@ public func equalDiff<T: Equatable>(_ expectedValue: T?) -> Predicate<T> {
         if receivedValue == nil {
             var message = ExpectationMessage.fail("")
             if let expectedValue = expectedValue {
-                message = ExpectationMessage.expectedCustomValueTo("equal <\(expectedValue)>", "nil")
+                message = ExpectationMessage.expectedCustomValueTo("equal <\(expectedValue)>", actual: "nil")
             }
             return PredicateResult(status: .fail, message: message)
         }
@@ -77,6 +77,9 @@ public func equalDiff<T: Equatable>(_ expectedValue: T?) -> Predicate<T> {
     }
 }
 ```
+
+Write the following to see the difference between 2 instances:
+`expect(received).to(equalDiff(expected))`
 
 ## Integrate with The Composable Architecture
 
