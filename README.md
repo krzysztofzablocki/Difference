@@ -78,6 +78,9 @@ public func equalDiff<T: Equatable>(_ expectedValue: T?) -> Predicate<T> {
 }
 ```
 
+Write the following to see the difference between 2 instances:
+`expect(received).to(equalDiff(expected))`
+
 ## Integrate with The Composable Architecture
 
 If you are using The Composable Architecture `nameLabels` configuration to get a diff that's more appropiate for reducer instrumentation
