@@ -42,7 +42,6 @@ public struct DifferenceNameLabels {
     }
 }
 
-
 private struct Differ {
     private let indentationType: IndentationType
     private let skipPrintingOnDiffCount: Bool
@@ -70,6 +69,12 @@ private struct Differ {
         guard expectedMirror.children.count != 0, receivedMirror.children.count != 0 else {
             if String(dumping: received) != String(dumping: expected) {
                 return handleChildless(expected, expectedMirror, received, receivedMirror, level)
+            } else if expectedMirror.displayStyle == .enum {
+                let expectedValue = intValue(for: expected)
+                let receivedValue = intValue(for: received)
+                if expectedValue != receivedValue {
+                    return handleChildless(expectedValue, expectedMirror, receivedValue, receivedMirror, level)
+                }
             }
             return []
         }
@@ -164,6 +169,8 @@ private struct Differ {
                     )
                     resultLines.append(Line(contents: childName, indentationLevel: level, canBeOrdered: true, children: children))
                 }
+            } else {
+                resultLines.append(contentsOf: diffLines(lhs.value, rhs.value, level: level))
             }
         }
         return resultLines
@@ -242,6 +249,15 @@ private struct Differ {
             return [linesContents.joined()]
         } else {
             return linesContents
+        }
+    }
+
+    /// Creates int value from Objective-C enum.
+    private func intValue<T>(for object: T) -> Int {
+        withUnsafePointer(to: object) {
+            $0.withMemoryRebound(to: Int.self, capacity: 1) {
+                $0.pointee
+            }
         }
     }
 }
