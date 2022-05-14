@@ -70,8 +70,8 @@ private struct Differ {
             if String(dumping: received) != String(dumping: expected) {
                 return handleChildless(expected, expectedMirror, received, receivedMirror, level)
             } else if expectedMirror.displayStyle == .enum {
-                let expectedValue = intValue(for: expected)
-                let receivedValue = intValue(for: received)
+                let expectedValue = enumIntValue(for: expected)
+                let receivedValue = enumIntValue(for: received)
                 if expectedValue != receivedValue {
                     return handleChildless(expectedValue, expectedMirror, receivedValue, receivedMirror, level)
                 }
@@ -142,6 +142,7 @@ private struct Differ {
         zipped.enumerated().forEach { (index, zippedValues) in
             let lhs = zippedValues.0
             let rhs = zippedValues.1
+            let childName = "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):"
             let leftDump = String(dumping: lhs.value)
             if leftDump != String(dumping: rhs.value) {
                 // Remove embedding of `some` for optional types, as it offers no value
@@ -153,7 +154,7 @@ private struct Differ {
                 if Mirror(reflecting: lhs.value).displayStyle != nil {
                     let results = diffLines(lhs.value, rhs.value, level: level + 1)
                     if !results.isEmpty {
-                        let line = Line(contents: "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):",
+                        let line = Line(contents: childName,
                             indentationLevel: level,
                             canBeOrdered: true,
                             children: results
@@ -161,7 +162,6 @@ private struct Differ {
                         resultLines.append(line)
                     }
                 } else {
-                    let childName = "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):"
                     let children = generateExpectedReceiveLines(
                         String(describing: lhs.value),
                         String(describing: rhs.value),
@@ -169,8 +169,17 @@ private struct Differ {
                     )
                     resultLines.append(Line(contents: childName, indentationLevel: level, canBeOrdered: true, children: children))
                 }
-            } else {
-                resultLines.append(contentsOf: diffLines(lhs.value, rhs.value, level: level))
+            } else if Mirror(reflecting: lhs.value).displayStyle == .enum {
+                let expectedValue = enumIntValue(for: lhs.value)
+                let receivedValue = enumIntValue(for: rhs.value)
+                if expectedValue != receivedValue {
+                    let children = generateExpectedReceiveLines(
+                        String(describing: expectedValue),
+                        String(describing: receivedValue),
+                        level + 1
+                    )
+                    resultLines.append(Line(contents: childName, indentationLevel: level, canBeOrdered: true, children: children))
+                }
             }
         }
         return resultLines
@@ -253,7 +262,7 @@ private struct Differ {
     }
 
     /// Creates int value from Objective-C enum.
-    private func intValue<T>(for object: T) -> Int {
+    private func enumIntValue<T>(for object: T) -> Int {
         withUnsafePointer(to: object) {
             $0.withMemoryRebound(to: Int.self, capacity: 1) {
                 $0.pointee

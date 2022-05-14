@@ -275,7 +275,7 @@ class DifferenceTests: XCTestCase {
         runTest(
             expected: Person(objcEnum: .overCurrentContext),
             received: Person(objcEnum: .overFullScreen),
-            expectedResults: ["Received: 5\nExpected: 6\n"]
+            expectedResults: ["objcEnum:\n|\tReceived: 5\n|\tExpected: 6\n"]
         )
     }
 
