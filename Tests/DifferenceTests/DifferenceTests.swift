@@ -318,6 +318,10 @@ extension DifferenceTests {
         ("test_canFindDictionaryKeyDifference", test_canFindDictionaryKeyDifference),
         ("test_canFindSetCountDifference", test_canFindSetCountDifference),
         ("test_canFindOptionalSetDifferenceBetweenSomeAndNone", test_canFindOptionalSetDifferenceBetweenSomeAndNone),
-        ("test_canFindSetDifference", test_canFindSetDifference)
+        ("test_canFindSetDifference", test_canFindSetDifference),
+        ("test_canFindObjCEnumDifferenceInStructure", test_canFindObjCEnumDifferenceInStructure),
+        ("test_canFindObjCEnumDifference", test_canFindObjCEnumDifference),
+        ("test_cannotFindDifferenceWithSameSwiftEnum", test_cannotFindDifferenceWithSameSwiftEnum),
+        ("test_cannotFindDifferenceWithSameObjects", test_cannotFindDifferenceWithSameObjects),
     ]
 }
