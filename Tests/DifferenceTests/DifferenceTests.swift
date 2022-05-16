@@ -9,7 +9,6 @@
 import Foundation
 import XCTest
 import Difference
-import UIKit
 
 typealias IndentationType = Difference.IndentationType
 
@@ -20,7 +19,7 @@ fileprivate struct Person: Equatable {
     let pet: Pet?
     let petAges: [String: Int]?
     let favoriteFoods: Set<String>?
-    let objcEnum: UIModalPresentationStyle
+    let objcEnum: ByteCountFormatter.CountStyle?
 
     init(
         name: String = "Krzysztof",
@@ -29,7 +28,7 @@ fileprivate struct Person: Equatable {
         pet: Pet? = .init(),
         petAges: [String: Int]? = nil,
         favoriteFoods: Set<String>? = nil,
-        objcEnum: UIModalPresentationStyle = .formSheet
+        objcEnum: ByteCountFormatter.CountStyle = .binary
     ) {
         self.name = name
         self.age = age
@@ -273,17 +272,17 @@ class DifferenceTests: XCTestCase {
 
     func test_canFindObjCEnumDifferenceInStructure() {
         runTest(
-            expected: Person(objcEnum: .overCurrentContext),
-            received: Person(objcEnum: .overFullScreen),
-            expectedResults: ["objcEnum:\n|\tReceived: 5\n|\tExpected: 6\n"]
+            expected: Person(objcEnum: .binary),
+            received: Person(objcEnum: .decimal),
+            expectedResults: ["objcEnum:\n|\tReceived: 2\n|\tExpected: 3\n"]
         )
     }
 
     func test_canFindObjCEnumDifference() {
         runTest(
-            expected: UIModalPresentationStyle.overCurrentContext,
-            received: UIModalPresentationStyle.overFullScreen,
-            expectedResults: ["Received: 5\nExpected: 6\n"]
+            expected: ByteCountFormatter.CountStyle.binary,
+            received: ByteCountFormatter.CountStyle.decimal,
+            expectedResults: ["Received: 2\nExpected: 3\n"]
         )
     }
 
