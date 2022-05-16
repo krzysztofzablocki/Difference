@@ -9,6 +9,7 @@
 import Foundation
 import XCTest
 import Difference
+import UIKit
 
 typealias IndentationType = Difference.IndentationType
 
@@ -19,6 +20,7 @@ fileprivate struct Person: Equatable {
     let pet: Pet?
     let petAges: [String: Int]?
     let favoriteFoods: Set<String>?
+    let objcEnum: UIModalPresentationStyle
 
     init(
         name: String = "Krzysztof",
@@ -26,7 +28,8 @@ fileprivate struct Person: Equatable {
         address: Address = .init(),
         pet: Pet? = .init(),
         petAges: [String: Int]? = nil,
-        favoriteFoods: Set<String>? = nil
+        favoriteFoods: Set<String>? = nil,
+        objcEnum: UIModalPresentationStyle = .formSheet
     ) {
         self.name = name
         self.age = age
@@ -34,6 +37,7 @@ fileprivate struct Person: Equatable {
         self.pet = pet
         self.petAges = petAges
         self.favoriteFoods = favoriteFoods
+        self.objcEnum = objcEnum
     }
 
     struct Address: Equatable {
@@ -265,6 +269,34 @@ class DifferenceTests: XCTestCase {
             received: Person(favoriteFoods: ["Oysters", "Crab"]),
             expectedResults: ["favoriteFoods:\n|\tExtra: Crab\n|\tExtra: Oysters\n|\tMissing: Pizza\n|\tMissing: Sushi\n"]
         )
+    }
+
+    func test_canFindObjCEnumDifferenceInStructure() {
+        runTest(
+            expected: Person(objcEnum: .overCurrentContext),
+            received: Person(objcEnum: .overFullScreen),
+            expectedResults: ["objcEnum:\n|\tReceived: 5\n|\tExpected: 6\n"]
+        )
+    }
+
+    func test_canFindObjCEnumDifference() {
+        runTest(
+            expected: UIModalPresentationStyle.overCurrentContext,
+            received: UIModalPresentationStyle.overFullScreen,
+            expectedResults: ["Received: 5\nExpected: 6\n"]
+        )
+    }
+
+    func test_cannotFindDifferenceWithSameSwiftEnum() {
+        runTest(
+            expected: State.loadedWithNoArguments,
+            received: State.loadedWithNoArguments,
+            expectedResults: [""]
+        )
+    }
+
+    func test_cannotFindDifferenceWithSameObjects() {
+        runTest(expected: truth, received: truth, expectedResults: [""])
     }
 }
 
