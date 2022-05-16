@@ -69,7 +69,7 @@ private struct Differ {
         guard expectedMirror.children.count != 0, receivedMirror.children.count != 0 else {
             if String(dumping: received) != String(dumping: expected) {
                 return handleChildless(expected, expectedMirror, received, receivedMirror, level)
-            } else if expectedMirror.displayStyle == .enum {
+            } else if expectedMirror.unwrapped?.displayStyle == .enum {
                 let expectedValue = enumIntValue(for: expected)
                 let receivedValue = enumIntValue(for: received)
                 if expectedValue != receivedValue {
@@ -169,7 +169,7 @@ private struct Differ {
                     )
                     resultLines.append(Line(contents: childName, indentationLevel: level, canBeOrdered: true, children: children))
                 }
-            } else if Mirror(reflecting: lhs.value).displayStyle == .enum {
+            } else if Mirror(reflecting: lhs.value).unwrapped?.displayStyle == .enum {
                 let expectedValue = enumIntValue(for: lhs.value)
                 let receivedValue = enumIntValue(for: rhs.value)
                 if expectedValue != receivedValue {
@@ -184,7 +184,6 @@ private struct Differ {
         }
         return resultLines
     }
-
 
     fileprivate func handleChildless<T>(
         _ expected: T,
@@ -377,6 +376,18 @@ fileprivate extension Mirror {
         default:
             return false
         }
+    }
+
+    var unwrapped: Mirror? {
+        guard displayStyle == .optional else {
+            return self
+        }
+        guard children.count != 0 else {
+            return nil
+        }
+
+        let (_, value) = children.first!
+        return Mirror(reflecting: value)
     }
 }
 
