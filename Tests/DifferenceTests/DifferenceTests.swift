@@ -299,14 +299,6 @@ class DifferenceTests: XCTestCase {
         )
     }
 
-    func test_canFindObjCEnumDifferenceIn() {
-        runTest(
-            expected: ByteCountFormatter.CountStyle.binary,
-            received: ByteCountFormatter.CountStyle.decimal,
-            expectedResults: ["Received: 2\nExpected: 3\n"]
-        )
-    }
-
     func test_canFindObjCEnumDifferenceInArrayOfEnums() {
         let expected = [
             ByteCountFormatter.CountStyle.decimal,
