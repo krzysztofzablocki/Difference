@@ -20,6 +20,7 @@ fileprivate struct Person: Equatable {
     let petAges: [String: Int]?
     let favoriteFoods: Set<String>?
     let objcEnum: ByteCountFormatter.CountStyle?
+    let elements: [CollectionElement]
 
     init(
         name: String = "Krzysztof",
@@ -28,7 +29,8 @@ fileprivate struct Person: Equatable {
         pet: Pet? = .init(),
         petAges: [String: Int]? = nil,
         favoriteFoods: Set<String>? = nil,
-        objcEnum: ByteCountFormatter.CountStyle = .binary
+        objcEnum: ByteCountFormatter.CountStyle = .binary,
+        elements: [CollectionElement] = []
     ) {
         self.name = name
         self.age = age
@@ -37,6 +39,7 @@ fileprivate struct Person: Equatable {
         self.petAges = petAges
         self.favoriteFoods = favoriteFoods
         self.objcEnum = objcEnum
+        self.elements = elements
     }
 
     struct Address: Equatable {
@@ -68,6 +71,16 @@ fileprivate struct Person: Equatable {
 
         init(name: String = "Fluffy") {
             self.name = name
+        }
+    }
+
+    struct CollectionElement: Equatable {
+        let title: String
+        let objcEnum: ByteCountFormatter.CountStyle
+
+        init(title: String = "title", objcEnum: ByteCountFormatter.CountStyle) {
+            self.title = title
+            self.objcEnum = objcEnum
         }
     }
 }
@@ -296,6 +309,28 @@ class DifferenceTests: XCTestCase {
 
     func test_cannotFindDifferenceWithSameObjects() {
         runTest(expected: truth, received: truth, expectedResults: [""])
+    }
+
+    func test_canFindObjCEnumDifferenceInArrayOfStructures() {
+        let expected = Person(
+            elements: [
+                Person.CollectionElement(objcEnum: .decimal),
+                Person.CollectionElement(objcEnum: .decimal),
+                Person.CollectionElement(objcEnum: .decimal),
+            ]
+        )
+        let received = Person(
+            elements: [
+                Person.CollectionElement(objcEnum: .decimal),
+                Person.CollectionElement(objcEnum: .binary),
+                Person.CollectionElement(objcEnum: .decimal),
+            ]
+        )
+        runTest(
+            expected: expected,
+            received: received,
+            expectedResults: ["style:\n\tReceived: 1\n\tExpected: 0\n"]
+        )
     }
 }
 
