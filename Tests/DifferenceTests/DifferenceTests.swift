@@ -299,16 +299,30 @@ class DifferenceTests: XCTestCase {
         )
     }
 
-    func test_cannotFindDifferenceWithSameSwiftEnum() {
+    func test_canFindObjCEnumDifferenceIn() {
         runTest(
-            expected: State.loadedWithNoArguments,
-            received: State.loadedWithNoArguments,
-            expectedResults: [""]
+            expected: ByteCountFormatter.CountStyle.binary,
+            received: ByteCountFormatter.CountStyle.decimal,
+            expectedResults: ["Received: 2\nExpected: 3\n"]
         )
     }
 
-    func test_cannotFindDifferenceWithSameObjects() {
-        runTest(expected: truth, received: truth, expectedResults: [""])
+    func test_canFindObjCEnumDifferenceInArrayOfEnums() {
+        let expected = [
+            ByteCountFormatter.CountStyle.decimal,
+            ByteCountFormatter.CountStyle.binary,
+            ByteCountFormatter.CountStyle.decimal,
+        ]
+        let received = [
+            ByteCountFormatter.CountStyle.decimal,
+            ByteCountFormatter.CountStyle.binary,
+            ByteCountFormatter.CountStyle.decimal,
+        ]
+        runTest(
+            expected: expected,
+            received: received,
+            expectedResults: ["TODO"]
+        )
     }
 
     func test_canFindObjCEnumDifferenceInArrayOfStructures() {
@@ -329,8 +343,21 @@ class DifferenceTests: XCTestCase {
         runTest(
             expected: expected,
             received: received,
-            expectedResults: ["style:\n\tReceived: 1\n\tExpected: 0\n"]
+            expectedResults: ["TODO"]
         )
+    }
+
+
+    func test_cannotFindDifferenceWithSameSwiftEnum() {
+        runTest(
+            expected: State.loadedWithNoArguments,
+            received: State.loadedWithNoArguments,
+            expectedResults: [""]
+        )
+    }
+
+    func test_cannotFindDifferenceWithSameObjects() {
+        runTest(expected: truth, received: truth, expectedResults: [""])
     }
 }
 
