@@ -328,22 +328,22 @@ class DifferenceTests: XCTestCase {
     func test_canFindObjCEnumDifferenceInArrayOfStructures() {
         let expected = Person(
             elements: [
-                Person.CollectionElement(objcEnum: .decimal),
-                Person.CollectionElement(objcEnum: .decimal),
-                Person.CollectionElement(objcEnum: .decimal),
+                Person.CollectionElement(title: "1", objcEnum: .decimal),
+                Person.CollectionElement(title: "2", objcEnum: .decimal),
+                Person.CollectionElement(title: "3", objcEnum: .decimal),
             ]
         )
         let received = Person(
             elements: [
-                Person.CollectionElement(objcEnum: .decimal),
-                Person.CollectionElement(objcEnum: .binary),
-                Person.CollectionElement(objcEnum: .decimal),
+                Person.CollectionElement(title: "1", objcEnum: .decimal),
+                Person.CollectionElement(title: "2", objcEnum: .binary),
+                Person.CollectionElement(title: "3", objcEnum: .decimal),
             ]
         )
         runTest(
             expected: expected,
             received: received,
-            expectedResults: ["TODO"]
+            expectedResults: ["elements:\n\tCollection[1]:\n\t\tobjcEnum:\n\t\t\tReceived: 3\n\t\t\tExpected: 2\n"]
         )
     }
 
