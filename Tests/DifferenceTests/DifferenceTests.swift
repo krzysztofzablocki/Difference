@@ -385,5 +385,7 @@ extension DifferenceTests {
         ("test_canFindObjCEnumDifference", test_canFindObjCEnumDifference),
         ("test_cannotFindDifferenceWithSameSwiftEnum", test_cannotFindDifferenceWithSameSwiftEnum),
         ("test_cannotFindDifferenceWithSameObjects", test_cannotFindDifferenceWithSameObjects),
+        ("test_canFindObjCEnumDifferenceInArrayOfEnums", test_canFindObjCEnumDifferenceInArrayOfEnums),
+        ("test_canFindObjCEnumDifferenceInArrayOfStructures", test_canFindObjCEnumDifferenceInArrayOfStructures),
     ]
 }
