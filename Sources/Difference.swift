@@ -69,12 +69,20 @@ private struct Differ {
         guard expectedMirror.children.count != 0, receivedMirror.children.count != 0 else {
             if String(dumping: received) != String(dumping: expected) {
                 return handleChildless(expected, expectedMirror, received, receivedMirror, level)
-            } else if expectedMirror.unwrapped?.displayStyle == .enum {
+            } else if expectedMirror.displayStyle == .enum {
                 let expectedValue = enumIntValue(for: expected)
                 let receivedValue = enumIntValue(for: received)
                 if expectedValue != receivedValue {
                     return handleChildless(expectedValue, expectedMirror, receivedValue, receivedMirror, level)
                 }
+            }
+            return []
+        }
+
+        // Remove embedding of `some` for optional types, as it offers no value
+        guard expectedMirror.displayStyle != .optional else {
+            if let expectedUnwrapped = expectedMirror.firstChildenValue, let receivedUnwrapped = receivedMirror.firstChildenValue {
+                return diffLines(expectedUnwrapped, receivedUnwrapped, level: level)
             }
             return []
         }
@@ -143,43 +151,15 @@ private struct Differ {
             let lhs = zippedValues.0
             let rhs = zippedValues.1
             let childName = "\(expectedMirror.displayStyleDescriptor(index: index))\(lhs.label ?? ""):"
-            let leftDump = String(dumping: lhs.value)
-            if leftDump != String(dumping: rhs.value) {
-                // Remove embedding of `some` for optional types, as it offers no value
-                guard expectedMirror.displayStyle != .optional else {
-                    let results = diffLines(lhs.value, rhs.value, level: level)
-                    resultLines.append(contentsOf: results)
-                    return
-                }
-                if Mirror(reflecting: lhs.value).displayStyle != nil {
-                    let results = diffLines(lhs.value, rhs.value, level: level + 1)
-                    if !results.isEmpty {
-                        let line = Line(contents: childName,
-                            indentationLevel: level,
-                            canBeOrdered: true,
-                            children: results
-                        )
-                        resultLines.append(line)
-                    }
-                } else {
-                    let children = generateExpectedReceiveLines(
-                        String(describing: lhs.value),
-                        String(describing: rhs.value),
-                        level + 1
-                    )
-                    resultLines.append(Line(contents: childName, indentationLevel: level, canBeOrdered: true, children: children))
-                }
-            } else if Mirror(reflecting: lhs.value).unwrapped?.displayStyle == .enum {
-                let expectedValue = enumIntValue(for: lhs.value)
-                let receivedValue = enumIntValue(for: rhs.value)
-                if expectedValue != receivedValue {
-                    let children = generateExpectedReceiveLines(
-                        String(describing: expectedValue),
-                        String(describing: receivedValue),
-                        level + 1
-                    )
-                    resultLines.append(Line(contents: childName, indentationLevel: level, canBeOrdered: true, children: children))
-                }
+            let results = diffLines(lhs.value, rhs.value, level: level + 1)
+
+            if !results.isEmpty {
+                let line = Line(contents: childName,
+                    indentationLevel: level,
+                    canBeOrdered: true,
+                    children: results
+                )
+                resultLines.append(line)
             }
         }
         return resultLines
@@ -378,16 +358,8 @@ fileprivate extension Mirror {
         }
     }
 
-    var unwrapped: Mirror? {
-        guard displayStyle == .optional else {
-            return self
-        }
-        guard children.count != 0 else {
-            return nil
-        }
-
-        let (_, value) = children.first!
-        return Mirror(reflecting: value)
+    var firstChildenValue: Any? {
+        children.first?.value
     }
 }
 

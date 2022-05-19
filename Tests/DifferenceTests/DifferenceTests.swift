@@ -20,6 +20,7 @@ fileprivate struct Person: Equatable {
     let petAges: [String: Int]?
     let favoriteFoods: Set<String>?
     let objcEnum: ByteCountFormatter.CountStyle?
+    let elements: [CollectionElement]
 
     init(
         name: String = "Krzysztof",
@@ -28,7 +29,8 @@ fileprivate struct Person: Equatable {
         pet: Pet? = .init(),
         petAges: [String: Int]? = nil,
         favoriteFoods: Set<String>? = nil,
-        objcEnum: ByteCountFormatter.CountStyle = .binary
+        objcEnum: ByteCountFormatter.CountStyle = .binary,
+        elements: [CollectionElement] = []
     ) {
         self.name = name
         self.age = age
@@ -37,6 +39,7 @@ fileprivate struct Person: Equatable {
         self.petAges = petAges
         self.favoriteFoods = favoriteFoods
         self.objcEnum = objcEnum
+        self.elements = elements
     }
 
     struct Address: Equatable {
@@ -68,6 +71,16 @@ fileprivate struct Person: Equatable {
 
         init(name: String = "Fluffy") {
             self.name = name
+        }
+    }
+
+    struct CollectionElement: Equatable {
+        let title: String
+        let objcEnum: ByteCountFormatter.CountStyle
+
+        init(title: String = "title", objcEnum: ByteCountFormatter.CountStyle) {
+            self.title = title
+            self.objcEnum = objcEnum
         }
     }
 }
@@ -286,6 +299,47 @@ class DifferenceTests: XCTestCase {
         )
     }
 
+    func test_canFindObjCEnumDifferenceInArrayOfEnums() {
+        let expected = [
+            ByteCountFormatter.CountStyle.decimal,
+            ByteCountFormatter.CountStyle.decimal,
+            ByteCountFormatter.CountStyle.decimal,
+        ]
+        let received = [
+            ByteCountFormatter.CountStyle.decimal,
+            ByteCountFormatter.CountStyle.binary,
+            ByteCountFormatter.CountStyle.decimal,
+        ]
+        runTest(
+            expected: expected,
+            received: received,
+            expectedResults: ["Collection[1]:\n|\tReceived: 3\n|\tExpected: 2\n"]
+        )
+    }
+
+    func test_canFindObjCEnumDifferenceInArrayOfStructures() {
+        let expected = Person(
+            elements: [
+                Person.CollectionElement(title: "1", objcEnum: .decimal),
+                Person.CollectionElement(title: "2", objcEnum: .decimal),
+                Person.CollectionElement(title: "3", objcEnum: .decimal),
+            ]
+        )
+        let received = Person(
+            elements: [
+                Person.CollectionElement(title: "1", objcEnum: .decimal),
+                Person.CollectionElement(title: "2", objcEnum: .binary),
+                Person.CollectionElement(title: "3", objcEnum: .decimal),
+            ]
+        )
+        runTest(
+            expected: expected,
+            received: received,
+            expectedResults: ["elements:\n|\tCollection[1]:\n|\t|\tobjcEnum:\n|\t|\t|\tReceived: 3\n|\t|\t|\tExpected: 2\n"]
+        )
+    }
+
+
     func test_cannotFindDifferenceWithSameSwiftEnum() {
         runTest(
             expected: State.loadedWithNoArguments,
@@ -323,5 +377,7 @@ extension DifferenceTests {
         ("test_canFindObjCEnumDifference", test_canFindObjCEnumDifference),
         ("test_cannotFindDifferenceWithSameSwiftEnum", test_cannotFindDifferenceWithSameSwiftEnum),
         ("test_cannotFindDifferenceWithSameObjects", test_cannotFindDifferenceWithSameObjects),
+        ("test_canFindObjCEnumDifferenceInArrayOfEnums", test_canFindObjCEnumDifferenceInArrayOfEnums),
+        ("test_canFindObjCEnumDifferenceInArrayOfStructures", test_canFindObjCEnumDifferenceInArrayOfStructures),
     ]
 }
