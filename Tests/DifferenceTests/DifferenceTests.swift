@@ -343,7 +343,7 @@ class DifferenceTests: XCTestCase {
         runTest(
             expected: expected,
             received: received,
-            expectedResults: ["elements:\n\tCollection[1]:\n\t\tobjcEnum:\n\t\t\tReceived: 3\n\t\t\tExpected: 2\n"]
+            expectedResults: ["elements:\n|\tCollection[1]:\n|\t|\tobjcEnum:\n|\t|\t|\tReceived: 3\n|\t|\t|\tExpected: 2\n"]
         )
     }
 
