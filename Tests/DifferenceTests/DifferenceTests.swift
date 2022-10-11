@@ -92,6 +92,17 @@ private enum State {
     case loadedWithNoArguments
 }
 
+fileprivate struct ChartValue: Hashable {
+    enum MetricState: Hashable {
+        case positive
+        case warning
+        case neutral
+    }
+
+    let values: [Double]
+    let state: MetricState
+}
+
 extension String {
     func adjustingFor(indentationType: IndentationType) -> String {
         switch indentationType {
@@ -297,6 +308,12 @@ class DifferenceTests: XCTestCase {
             received: ByteCountFormatter.CountStyle.decimal,
             expectedResults: ["Received: 2\nExpected: 3\n"]
         )
+
+        runTest(
+            expected: Formatter.Context.beginningOfSentence,
+            received: Formatter.Context.dynamic,
+            expectedResults: ["Received: 1\nExpected: 4\n"]
+        )
     }
 
     func test_canFindObjCEnumDifferenceInArrayOfEnums() {
@@ -348,6 +365,14 @@ class DifferenceTests: XCTestCase {
         )
     }
 
+    func test_cannotFindDifferenceWithSameSwiftEnumEmbeededInObjects() {
+        runTest(
+            expected: ChartValue(values: [1, 2], state: .positive),
+            received: ChartValue(values: [1, 2], state: .positive),
+            expectedResults: [""]
+        )
+    }
+
     func test_cannotFindDifferenceWithSameObjects() {
         runTest(expected: truth, received: truth, expectedResults: [""])
     }
@@ -378,6 +403,7 @@ extension DifferenceTests {
         ("test_cannotFindDifferenceWithSameSwiftEnum", test_cannotFindDifferenceWithSameSwiftEnum),
         ("test_cannotFindDifferenceWithSameObjects", test_cannotFindDifferenceWithSameObjects),
         ("test_canFindObjCEnumDifferenceInArrayOfEnums", test_canFindObjCEnumDifferenceInArrayOfEnums),
+        ("test_cannotFindDifferenceWithSameSwiftEnumEmbeededInObjects", test_cannotFindDifferenceWithSameSwiftEnumEmbeededInObjects),
         ("test_canFindObjCEnumDifferenceInArrayOfStructures", test_canFindObjCEnumDifferenceInArrayOfStructures),
     ]
 }

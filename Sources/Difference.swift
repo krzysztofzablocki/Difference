@@ -67,9 +67,10 @@ private struct Differ {
         let receivedMirror = Mirror(reflecting: received)
 
         guard expectedMirror.children.count != 0, receivedMirror.children.count != 0 else {
-            if String(dumping: received) != String(dumping: expected) {
+            let receivedDump = String(dumping: received)
+            if receivedDump != String(dumping: expected) {
                 return handleChildless(expected, expectedMirror, received, receivedMirror, level)
-            } else if expectedMirror.displayStyle == .enum {
+            } else if expectedMirror.displayStyle == .enum, receivedDump.hasPrefix("__C.") { // enum and C bridged
                 let expectedValue = enumIntValue(for: expected)
                 let receivedValue = enumIntValue(for: received)
                 if expectedValue != receivedValue {
