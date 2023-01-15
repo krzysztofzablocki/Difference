@@ -27,7 +27,7 @@ Add `github "krzysztofzablocki/Difference"` to your Cartfile.
 
 ### SwiftPM
 
-Add `.package(name: "Difference", url: "https://github.com/krzysztofzablocki/Difference.git", .branch("master")),` dependency in your Package manifest.
+Add `.package(url: "https://github.com/krzysztofzablocki/Difference.git", branch: "master")` dependency in your Package manifest.
 
 ## Using lldb
 
