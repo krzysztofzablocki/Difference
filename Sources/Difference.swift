@@ -8,7 +8,7 @@
 
 import Foundation
 
-private typealias IndentationType = Difference.IndentationType
+public typealias IndentationType = Difference.IndentationType
 
 public struct DifferenceNameLabels {
     let expected: String
@@ -62,7 +62,7 @@ private struct Differ {
         return buildLineContents(lines: lines)
     }
 
-    fileprivate func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [Line] {
+    func diffLines<T>(_ expected: T, _ received: T, level: Int = 0) -> [Line] {
         let expectedMirror = Mirror(reflecting: expected)
         let receivedMirror = Mirror(reflecting: received)
 
@@ -277,13 +277,20 @@ public enum Difference {
     }
 }
 
-private struct Line {
-    let contents: String
-    let indentationLevel: Int
-    let children: [Line]
-    let canBeOrdered: Bool
+public struct Line {
+    public init(contents: String, indentationLevel: Int, children: [Line], canBeOrdered: Bool) {
+        self.contents = contents
+        self.indentationLevel = indentationLevel
+        self.children = children
+        self.canBeOrdered = canBeOrdered
+    }
+    
+    public let contents: String
+    public let indentationLevel: Int
+    public let children: [Line]
+    public let canBeOrdered: Bool
 
-    var hasChildren: Bool { !children.isEmpty }
+    public var hasChildren: Bool { !children.isEmpty }
 
     init(
         contents: String,
@@ -297,7 +304,7 @@ private struct Line {
         self.canBeOrdered = canBeOrdered
     }
 
-    func generateContents(indentationType: IndentationType) -> String {
+    public func generateContents(indentationType: IndentationType) -> String {
         let indentationString = indentation(level: indentationLevel, indentationType: indentationType)
         let childrenContents = children
             .sorted { lhs, rhs in
@@ -382,6 +389,26 @@ public func diff<T>(
 ) -> [String] {
     Differ(indentationType: indentationType, skipPrintingOnDiffCount: skipPrintingOnDiffCount, nameLabels: nameLabels)
         .diff(expected, received)
+}
+
+/// Builds list of differences between 2 objects
+///
+/// - Parameters:
+///   - expected: Expected value
+///   - received: Received value
+///   - indentationType: Style of indentation to use
+///   - skipPrintingOnDiffCount: Skips the printing of the object when a collection has a different count
+///
+/// - Returns: List of differences
+public func diffLines<T>(
+    _ expected: T,
+    _ received: T,
+    indentationType: Difference.IndentationType = .pipe,
+    skipPrintingOnDiffCount: Bool = false,
+    nameLabels: DifferenceNameLabels = .expectation
+) -> [Line] {
+    Differ(indentationType: indentationType, skipPrintingOnDiffCount: skipPrintingOnDiffCount, nameLabels: nameLabels)
+        .diffLines(expected, received)
 }
 
 /// Prints list of differences between 2 objects
