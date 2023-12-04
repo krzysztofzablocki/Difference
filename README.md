@@ -15,6 +15,8 @@ This forces you to manually scan the text and try to figure out exactly what's w
 
 ![](Resources/after.png)
 
+[**If you'd like to support my work and improve your engineering workflows, check out my SwiftyStack course**](https://www.swiftystack.com/)
+
 ## Installation
 
 ### CocoaPods
