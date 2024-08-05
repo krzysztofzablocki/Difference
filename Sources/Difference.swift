@@ -8,7 +8,7 @@
 
 import Foundation
 
-public typealias IndentationType = Difference.IndentationType
+public typealias IndentationType = Diff.IndentationType
 
 public struct DifferenceNameLabels {
     let expected: String
@@ -251,7 +251,7 @@ private struct Differ {
     }
 }
 
-public enum Difference {
+public enum Diff {
     /// Styling of the diff indentation.
     /// `pipe` example:
     ///     address:
@@ -383,7 +383,7 @@ fileprivate extension Mirror {
 public func diff<T>(
     _ expected: T,
     _ received: T,
-    indentationType: Difference.IndentationType = .pipe,
+    indentationType: Diff.IndentationType = .pipe,
     skipPrintingOnDiffCount: Bool = false,
     nameLabels: DifferenceNameLabels = .expectation
 ) -> [String] {
@@ -403,7 +403,7 @@ public func diff<T>(
 public func diffLines<T>(
     _ expected: T,
     _ received: T,
-    indentationType: Difference.IndentationType = .pipe,
+    indentationType: Diff.IndentationType = .pipe,
     skipPrintingOnDiffCount: Bool = false,
     nameLabels: DifferenceNameLabels = .expectation
 ) -> [Line] {
@@ -421,7 +421,7 @@ public func diffLines<T>(
 public func dumpDiff<T: Equatable>(
     _ expected: T,
     _ received: T,
-    indentationType: Difference.IndentationType = .pipe,
+    indentationType: Diff.IndentationType = .pipe,
     skipPrintingOnDiffCount: Bool = false
 ) {
     // skip equal
@@ -448,7 +448,7 @@ public func dumpDiff<T: Equatable>(
 public func dumpDiff<T>(
     _ expected: T,
     _ received: T,
-    indentationType: Difference.IndentationType = .pipe,
+    indentationType: Diff.IndentationType = .pipe,
     skipPrintingOnDiffCount: Bool = false
 ) {
     diff(
