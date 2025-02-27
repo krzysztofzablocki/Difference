@@ -60,8 +60,8 @@ Replace `#filePath` with `#file` if you're using Xcode 11 or earlier.
 Add this to your test target:
 
 ```swift
-public func equalDiff<T: Equatable>(_ expectedValue: T?) -> Predicate<T> {
-    return Predicate.define { actualExpression in
+public func equalDiff<T: Equatable>(_ expectedValue: T?) -> Matcher<T> {
+    return Matcher.define { actualExpression in
         let receivedValue = try actualExpression.evaluate()
 
         if receivedValue == nil {
@@ -69,13 +69,13 @@ public func equalDiff<T: Equatable>(_ expectedValue: T?) -> Predicate<T> {
             if let expectedValue = expectedValue {
                 message = ExpectationMessage.expectedCustomValueTo("equal <\(expectedValue)>", actual: "nil")
             }
-            return PredicateResult(status: .fail, message: message)
+            return MatcherResult(status: .fail, message: message)
         }
         if expectedValue == nil {
-            return PredicateResult(status: .fail, message: ExpectationMessage.fail("").appendedBeNilHint())
+            return MatcherResult(status: .fail, message: ExpectationMessage.fail("").appendedBeNilHint())
         }
 
-        return PredicateResult(bool: receivedValue == expectedValue, message: ExpectationMessage.fail("Found difference for " + diff(expectedValue, receivedValue).joined(separator: ", ")))
+        return MatcherResult(bool: receivedValue == expectedValue, message: ExpectationMessage.fail("Found difference for " + diff(expectedValue, receivedValue).joined(separator: ", ")))
     }
 }
 ```
