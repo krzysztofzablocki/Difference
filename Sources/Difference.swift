@@ -66,17 +66,8 @@ private struct Differ {
         let expectedMirror = Mirror(reflecting: expected)
         let receivedMirror = Mirror(reflecting: received)
 
-        if expectedMirror.subjectType == Decimal.self || receivedMirror.subjectType == Decimal.self
-        {
-            if let expectedDecimal = expected as? Decimal, let receivedDecimal = received as? Decimal
-            {
-                if expectedDecimal != receivedDecimal {
-                    return generateExpectedReceiveLines("\(expectedDecimal)", "\(receivedDecimal)", level)
-                } else {
-                    return []
-                }
-            }
-            return handleChildless(expected, expectedMirror, received, receivedMirror, level)
+        if let expectedDecimal = expected as? Decimal, let receivedDecimal = received as? Decimal {
+            return expectedDecimal == receivedDecimal ? [] : generateExpectedReceiveLines("\(expectedDecimal)", "\(receivedDecimal)", level)
         }
 
         guard expectedMirror.children.count != 0, receivedMirror.children.count != 0 else {

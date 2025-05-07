@@ -140,9 +140,9 @@ class DifferenceTests: XCTestCase {
     
     func testCanFindRootDecimalDifference() {
         runTest(
-          expected: 30 as Decimal,
-          received: 300 as Decimal,
-          expectedResults: ["Received: 300\nExpected: 30\n"]
+            expected: 30 as Decimal,
+            received: 300 as Decimal,
+            expectedResults: ["Received: 300\nExpected: 30\n"]
         )
       }
     
